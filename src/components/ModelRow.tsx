@@ -65,26 +65,32 @@ export function ModelRow({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="grid w-full grid-cols-[1fr_auto_minmax(80px,160px)_auto] items-center gap-3 px-3 py-3 text-left transition hover:bg-slate-50 dark:hover:bg-slate-900"
+        className="flex w-full flex-col gap-1.5 px-3 py-3 text-left transition hover:bg-slate-50 sm:grid sm:grid-cols-[1fr_auto_minmax(80px,160px)_auto] sm:items-center sm:gap-3 dark:hover:bg-slate-900"
       >
-        <div className="min-w-0">
-          <div className="truncate text-sm font-medium">{model.displayName}</div>
-          <div className="truncate text-xs text-slate-500 dark:text-slate-400">
-            {model.developer} · {model.family}
+        <div className="flex items-baseline justify-between gap-3 sm:contents">
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-medium">{model.displayName}</div>
+            <div className="truncate text-xs text-slate-500 dark:text-slate-400">
+              {model.developer} · {model.family}
+            </div>
+          </div>
+          <div className="shrink-0 text-sm tabular-nums text-slate-700 dark:text-slate-300">
+            {fmtGB(estimate.rangeGB.low)}–{fmtGB(estimate.rangeGB.high)} GB
           </div>
         </div>
-        <div className="text-sm tabular-nums text-slate-700 dark:text-slate-300">
-          {fmtGB(estimate.rangeGB.low)}–{fmtGB(estimate.rangeGB.high)} GB
-        </div>
-        <div
-          className="h-2 overflow-hidden rounded bg-slate-200 dark:bg-slate-800"
-          aria-hidden="true"
-        >
-          <div className={`h-full ${style.bar}`} style={{ width: `${widthPct}%` }} />
-        </div>
-        <div className={`flex items-center gap-1 text-sm font-semibold ${style.badge}`}>
-          <span aria-hidden="true">{style.icon}</span>
-          <span className="sr-only">{style.label}</span>
+        <div className="flex items-center gap-2 sm:contents">
+          <div
+            className="h-2 flex-1 overflow-hidden rounded bg-slate-200 sm:flex-none dark:bg-slate-800"
+            aria-hidden="true"
+          >
+            <div className={`h-full ${style.bar}`} style={{ width: `${widthPct}%` }} />
+          </div>
+          <div
+            className={`flex shrink-0 items-center gap-1 text-sm font-semibold ${style.badge}`}
+          >
+            <span aria-hidden="true">{style.icon}</span>
+            <span className="sr-only">{style.label}</span>
+          </div>
         </div>
       </button>
       {open && (
