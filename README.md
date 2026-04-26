@@ -4,7 +4,6 @@ A static web tool that takes available RAM, context length, and quantization, an
 
 ## Live demo
 
-_TBD — deploy to Vercel and link here._
 
 ## Methodology
 
