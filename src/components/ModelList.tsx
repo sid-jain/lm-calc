@@ -106,7 +106,7 @@ export function ModelList({ models, quant, contextLen, ramGB }: Props): JSX.Elem
           <select
             value={sortKey}
             onChange={(e) => setSortKey(e.target.value as SortKey)}
-            className="rounded border border-slate-300 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-slate-700"
+            className="rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
           >
             {SORT_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>

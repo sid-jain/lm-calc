@@ -16,7 +16,7 @@ export function snapContext(value: number): number {
 }
 
 export function formatContext(tokens: number): string {
-  if (tokens >= 1_000_000) return `${tokens / 1_000_000}M`;
+  if (tokens >= 1_048_576) return `${Math.round(tokens / 1_048_576)}M`;
   if (tokens >= 1024) return `${Math.round(tokens / 1024)}K`;
   return `${tokens}`;
 }

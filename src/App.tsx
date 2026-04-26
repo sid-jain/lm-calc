@@ -3,17 +3,19 @@ import { Controls } from './components/Controls';
 import { ModelList } from './components/ModelList';
 import { models } from './lib/loadModels';
 import { QUANT_LEVELS } from './lib/quants';
+import { useTheme } from './lib/useTheme';
 
 export function App(): JSX.Element {
   const [ramGB, setRamGB] = useState(16);
   const [contextLen, setContextLen] = useState(8192);
   const [quant, setQuant] = useState(QUANT_LEVELS.find((q) => q.id === 'q4_k_m')!);
+  const { theme, toggle } = useTheme();
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">
-      <header className="mb-6 flex items-baseline justify-between">
+      <header className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-bold tracking-tight">LM Calc</h1>
-        <nav className="flex gap-4 text-sm text-slate-600 dark:text-slate-400">
+        <nav className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
           <a href="#methodology" className="hover:text-slate-900 dark:hover:text-slate-100">
             Methodology
           </a>
@@ -25,6 +27,15 @@ export function App(): JSX.Element {
           >
             GitHub
           </a>
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+            className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-300 text-base text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            <span aria-hidden="true">{theme === 'dark' ? '☀' : '☾'}</span>
+          </button>
         </nav>
       </header>
 

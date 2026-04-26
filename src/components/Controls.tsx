@@ -47,7 +47,7 @@ export function Controls({
                 onRamGB(Math.max(RAM_MIN, Math.min(RAM_MAX, Math.round(n))));
               }
             }}
-            className="w-24 rounded border border-slate-300 bg-transparent px-2 py-1 text-2xl font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-slate-700"
+            className="w-24 rounded border border-slate-300 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 px-2 py-1 text-lg font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-slate-700"
           />
           <span className="text-sm text-slate-500 dark:text-slate-400">GB</span>
         </div>
@@ -75,7 +75,7 @@ export function Controls({
             id="ctx-select"
             value={contextLen}
             onChange={(e) => onContextLen(Number(e.target.value))}
-            className="rounded border border-slate-300 bg-transparent px-2 py-1 text-2xl font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-slate-700"
+            className="rounded border border-slate-300 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 px-2 py-1 text-lg font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-slate-700"
           >
             {CONTEXT_SNAPS.map((c) => (
               <option key={c} value={c}>
@@ -111,7 +111,7 @@ export function Controls({
             const next = QUANT_LEVELS.find((q) => q.id === e.target.value);
             if (next) onQuant(next);
           }}
-          className="mt-2 w-full rounded border border-slate-300 bg-transparent px-2 py-2 text-2xl font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-slate-700"
+          className="mt-2 w-full rounded border border-slate-300 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 px-2 py-2 text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-slate-700"
         >
           {QUANT_LEVELS.map((q) => (
             <option key={q.id} value={q.id}>
