@@ -14,7 +14,15 @@ export function App(): JSX.Element {
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">
       <header className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-bold tracking-tight">LM Calc</h1>
+        <div className="flex items-baseline gap-2">
+          <h1 className="text-xl font-bold tracking-tight">LM Calc</h1>
+          <span
+            title="Pre-release — math, model list, and UI may all change"
+            className="rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300"
+          >
+            v{__APP_VERSION__}
+          </span>
+        </div>
         <nav className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
           <a href="#methodology" className="hover:text-slate-900 dark:hover:text-slate-100">
             Methodology
