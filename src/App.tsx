@@ -12,10 +12,10 @@ export function App(): JSX.Element {
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">
       <header className="mb-6 flex items-baseline justify-between">
-        <h1 className="text-xl font-bold tracking-tight">LLM RAM Calculator</h1>
+        <h1 className="text-xl font-bold tracking-tight">LM Calc</h1>
         <nav className="flex gap-4 text-sm text-slate-600 dark:text-slate-400">
           <a href="#methodology" className="hover:text-slate-900 dark:hover:text-slate-100">
-            methodology
+            Methodology
           </a>
           <a
             href="https://github.com"

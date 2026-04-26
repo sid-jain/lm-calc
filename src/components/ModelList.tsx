@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { estimateMemory } from '../lib/memory';
-import type { Model, QuantLevel } from '../lib/types';
+import type { MemoryEstimate, Model, QuantLevel } from '../lib/types';
 import { ModelRow } from './ModelRow';
 
 interface Props {
@@ -10,33 +10,143 @@ interface Props {
   ramGB: number;
 }
 
-export function ModelList({ models, quant, contextLen, ramGB }: Props): JSX.Element {
-  const rows = useMemo(() => {
-    return models
-      .map((m) => ({ model: m, estimate: estimateMemory(m, quant, contextLen) }))
-      .sort((a, b) => a.estimate.totalGB - b.estimate.totalGB);
-  }, [models, quant, contextLen]);
+type SortKey = 'memory-asc' | 'params-asc' | 'params-desc' | 'name' | 'developer';
 
-  const fitCount = rows.filter((r) => r.estimate.totalGB <= ramGB).length;
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: 'memory-asc', label: 'Total memory (smallest first)' },
+  { value: 'params-desc', label: 'Parameters (largest first)' },
+  { value: 'params-asc', label: 'Parameters (smallest first)' },
+  { value: 'name', label: 'Name (A–Z)' },
+  { value: 'developer', label: 'Developer (A–Z)' },
+];
+
+type BucketKey = 'fits' | 'tight' | 'over';
+const BUCKET_ORDER: BucketKey[] = ['fits', 'tight', 'over'];
+
+const BUCKET_META: Record<
+  BucketKey,
+  { label: string; dot: string; tone: string }
+> = {
+  fits: {
+    label: 'Fits comfortably',
+    dot: 'bg-emerald-500',
+    tone: 'text-emerald-700 dark:text-emerald-300',
+  },
+  tight: {
+    label: 'Tight (within 90–100% of RAM)',
+    dot: 'bg-amber-500',
+    tone: 'text-amber-700 dark:text-amber-300',
+  },
+  over: {
+    label: "Doesn't fit",
+    dot: 'bg-rose-500',
+    tone: 'text-rose-700 dark:text-rose-300',
+  },
+};
+
+function bucketOf(totalGB: number, ramGB: number): BucketKey {
+  if (totalGB <= ramGB * 0.9) return 'fits';
+  if (totalGB <= ramGB) return 'tight';
+  return 'over';
+}
+
+interface Row {
+  model: Model;
+  estimate: MemoryEstimate;
+}
+
+function compareWithin(a: Row, b: Row, key: SortKey): number {
+  switch (key) {
+    case 'memory-asc':
+      return a.estimate.totalGB - b.estimate.totalGB;
+    case 'params-asc':
+      return a.model.params - b.model.params;
+    case 'params-desc':
+      return b.model.params - a.model.params;
+    case 'name':
+      return a.model.displayName.localeCompare(b.model.displayName);
+    case 'developer':
+      return (
+        a.model.developer.localeCompare(b.model.developer) ||
+        a.model.params - b.model.params
+      );
+  }
+}
+
+export function ModelList({ models, quant, contextLen, ramGB }: Props): JSX.Element {
+  const [sortKey, setSortKey] = useState<SortKey>('memory-asc');
+
+  const grouped = useMemo(() => {
+    const all = models.map<Row>((m) => ({
+      model: m,
+      estimate: estimateMemory(m, quant, contextLen),
+    }));
+    const buckets: Record<BucketKey, Row[]> = { fits: [], tight: [], over: [] };
+    for (const row of all) {
+      buckets[bucketOf(row.estimate.totalGB, ramGB)].push(row);
+    }
+    for (const key of BUCKET_ORDER) {
+      buckets[key].sort((a, b) => compareWithin(a, b, sortKey));
+    }
+    return buckets;
+  }, [models, quant, contextLen, ramGB, sortKey]);
+
+  const totalCount = grouped.fits.length + grouped.tight.length + grouped.over.length;
+  const fitCount = grouped.fits.length + grouped.tight.length;
 
   return (
     <div className="rounded-lg border border-slate-200 dark:border-slate-800">
-      <div className="border-b border-slate-200 px-3 py-2 text-sm text-slate-600 dark:border-slate-800 dark:text-slate-400">
-        <span className="font-semibold text-slate-900 dark:text-slate-100">{fitCount}</span> of{' '}
-        {rows.length} models fit in {ramGB} GB
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-3 py-2 text-sm dark:border-slate-800">
+        <div className="text-slate-600 dark:text-slate-400">
+          <span className="font-semibold text-slate-900 dark:text-slate-100">{fitCount}</span> of{' '}
+          {totalCount} models fit in {ramGB} GB
+        </div>
+        <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+          <span>Sort:</span>
+          <select
+            value={sortKey}
+            onChange={(e) => setSortKey(e.target.value as SortKey)}
+            className="rounded border border-slate-300 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-slate-700"
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
-      <ul>
-        {rows.map(({ model, estimate }) => (
-          <ModelRow
-            key={model.id}
-            model={model}
-            quant={quant}
-            contextLen={contextLen}
-            ramGB={ramGB}
-            estimate={estimate}
-          />
-        ))}
-      </ul>
+
+      {BUCKET_ORDER.map((key) => {
+        const rows = grouped[key];
+        if (rows.length === 0) return null;
+        const meta = BUCKET_META[key];
+        return (
+          <section key={key}>
+            <div
+              className={`flex items-center gap-2 border-b border-t border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide dark:border-slate-800 dark:bg-slate-900/40 ${meta.tone}`}
+            >
+              <span className={`inline-block h-2 w-2 rounded-full ${meta.dot}`} aria-hidden="true" />
+              <span>{meta.label}</span>
+              <span className="ml-auto font-normal normal-case tracking-normal text-slate-500 dark:text-slate-400">
+                {rows.length}
+              </span>
+            </div>
+            <ul>
+              {rows.map(({ model, estimate }) => (
+                <ModelRow
+                  key={model.id}
+                  model={model}
+                  quant={quant}
+                  contextLen={contextLen}
+                  ramGB={ramGB}
+                  estimate={estimate}
+                />
+              ))}
+            </ul>
+          </section>
+        );
+      })}
     </div>
   );
 }
