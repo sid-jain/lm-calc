@@ -4,6 +4,7 @@ A static web tool that takes available RAM, context length, and quantization, an
 
 ## Live demo
 
+<https://lmcalc.app>
 
 ## Methodology
 
