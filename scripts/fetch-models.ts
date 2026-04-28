@@ -52,7 +52,12 @@ async function fetchConfig(repo: string): Promise<HfConfig> {
         : '';
     throw new Error(`Failed to fetch ${url}: ${res.status} ${res.statusText}${hint}`);
   }
-  return (await res.json()) as HfConfig;
+  const raw = (await res.json()) as Record<string, unknown>;
+  // Multimodal models (Gemma 3 4B+, Llama 4) nest the text architecture under text_config.
+  if (raw.text_config && typeof raw.text_config === 'object') {
+    return raw.text_config as HfConfig;
+  }
+  return raw as HfConfig;
 }
 
 function determineAttention(

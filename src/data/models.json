@@ -46,6 +46,29 @@
     }
   },
   {
+    "id": "gemma-3-1b",
+    "displayName": "Gemma 3 1B",
+    "family": "Gemma 3",
+    "developer": "Google",
+    "hfRepo": "google/gemma-3-1b-pt",
+    "params": 1,
+    "isMoE": false,
+    "activeParams": null,
+    "arch": {
+      "layers": 26,
+      "attnHeads": 4,
+      "kvHeads": 1,
+      "headDim": 256,
+      "hiddenSize": 1152,
+      "vocabSize": 262144,
+      "tiedEmbeddings": false,
+      "maxContext": 32768,
+      "attentionType": "mixed",
+      "slidingWindowSize": 512,
+      "fullAttentionRatio": 0.1667
+    }
+  },
+  {
     "id": "llama-3-2-1b",
     "displayName": "Llama 3.2 1B",
     "family": "Llama 3",
@@ -207,6 +230,29 @@
     }
   },
   {
+    "id": "gemma-3-4b",
+    "displayName": "Gemma 3 4B",
+    "family": "Gemma 3",
+    "developer": "Google",
+    "hfRepo": "google/gemma-3-4b-pt",
+    "params": 4.3,
+    "isMoE": false,
+    "activeParams": null,
+    "arch": {
+      "layers": 34,
+      "attnHeads": 8,
+      "kvHeads": 4,
+      "headDim": 256,
+      "hiddenSize": 2560,
+      "vocabSize": 262208,
+      "tiedEmbeddings": false,
+      "maxContext": 131072,
+      "attentionType": "mixed",
+      "slidingWindowSize": 1024,
+      "fullAttentionRatio": 0.1667
+    }
+  },
+  {
     "id": "mistral-7b",
     "displayName": "Mistral 7B",
     "family": "Mistral",
@@ -345,6 +391,29 @@
     }
   },
   {
+    "id": "gemma-3-12b",
+    "displayName": "Gemma 3 12B",
+    "family": "Gemma 3",
+    "developer": "Google",
+    "hfRepo": "google/gemma-3-12b-pt",
+    "params": 12.187,
+    "isMoE": false,
+    "activeParams": null,
+    "arch": {
+      "layers": 48,
+      "attnHeads": 16,
+      "kvHeads": 8,
+      "headDim": 256,
+      "hiddenSize": 3840,
+      "vocabSize": 262208,
+      "tiedEmbeddings": false,
+      "maxContext": 131072,
+      "attentionType": "mixed",
+      "slidingWindowSize": 1024,
+      "fullAttentionRatio": 0.1667
+    }
+  },
+  {
     "id": "phi-4",
     "displayName": "Phi-4",
     "family": "Phi",
@@ -437,6 +506,29 @@
     }
   },
   {
+    "id": "mistral-small-3-24b",
+    "displayName": "Mistral Small 3 24B",
+    "family": "Mistral",
+    "developer": "Mistral AI",
+    "hfRepo": "mistralai/Mistral-Small-24B-Base-2501",
+    "params": 23.572,
+    "isMoE": false,
+    "activeParams": null,
+    "arch": {
+      "layers": 40,
+      "attnHeads": 32,
+      "kvHeads": 8,
+      "headDim": 128,
+      "hiddenSize": 5120,
+      "vocabSize": 131072,
+      "tiedEmbeddings": false,
+      "maxContext": 32768,
+      "attentionType": "gqa",
+      "slidingWindowSize": null,
+      "fullAttentionRatio": null
+    }
+  },
+  {
     "id": "gemma-2-27b",
     "displayName": "Gemma 2 27B",
     "family": "Gemma 2",
@@ -457,6 +549,29 @@
       "attentionType": "mixed",
       "slidingWindowSize": 4096,
       "fullAttentionRatio": 0.5
+    }
+  },
+  {
+    "id": "gemma-3-27b",
+    "displayName": "Gemma 3 27B",
+    "family": "Gemma 3",
+    "developer": "Google",
+    "hfRepo": "google/gemma-3-27b-pt",
+    "params": 27.432,
+    "isMoE": false,
+    "activeParams": null,
+    "arch": {
+      "layers": 62,
+      "attnHeads": 32,
+      "kvHeads": 16,
+      "headDim": 128,
+      "hiddenSize": 5376,
+      "vocabSize": 262208,
+      "tiedEmbeddings": false,
+      "maxContext": 131072,
+      "attentionType": "mixed",
+      "slidingWindowSize": 1024,
+      "fullAttentionRatio": 0.1667
     }
   },
   {
@@ -644,6 +759,29 @@
     }
   },
   {
+    "id": "llama-4-scout",
+    "displayName": "Llama 4 Scout 109B-A17B",
+    "family": "Llama 4",
+    "developer": "Meta",
+    "hfRepo": "meta-llama/Llama-4-Scout-17B-16E",
+    "params": 108.642,
+    "isMoE": true,
+    "activeParams": 17,
+    "arch": {
+      "layers": 48,
+      "attnHeads": 40,
+      "kvHeads": 8,
+      "headDim": 128,
+      "hiddenSize": 5120,
+      "vocabSize": 202048,
+      "tiedEmbeddings": false,
+      "maxContext": 262144,
+      "attentionType": "gqa",
+      "slidingWindowSize": null,
+      "fullAttentionRatio": null
+    }
+  },
+  {
     "id": "mixtral-8x22b",
     "displayName": "Mixtral 8x22B",
     "family": "Mixtral",
@@ -684,6 +822,29 @@
       "vocabSize": 151936,
       "tiedEmbeddings": false,
       "maxContext": 40960,
+      "attentionType": "gqa",
+      "slidingWindowSize": null,
+      "fullAttentionRatio": null
+    }
+  },
+  {
+    "id": "llama-4-maverick",
+    "displayName": "Llama 4 Maverick 400B-A17B",
+    "family": "Llama 4",
+    "developer": "Meta",
+    "hfRepo": "meta-llama/Llama-4-Maverick-17B-128E",
+    "params": 401.584,
+    "isMoE": true,
+    "activeParams": 17,
+    "arch": {
+      "layers": 48,
+      "attnHeads": 40,
+      "kvHeads": 8,
+      "headDim": 128,
+      "hiddenSize": 5120,
+      "vocabSize": 202048,
+      "tiedEmbeddings": false,
+      "maxContext": 262144,
       "attentionType": "gqa",
       "slidingWindowSize": null,
       "fullAttentionRatio": null
