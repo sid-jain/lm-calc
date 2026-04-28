@@ -73,7 +73,7 @@ export function ModelRow({
               <span className="truncate text-sm font-medium">{model.displayName}</span>
               {model.isMoE && (
                 <span
-                  title={`Mixture of Experts — ~${model.activeParams}B active per token, all ${model.params}B loaded into memory`}
+                  title={`Mixture of Experts: ~${model.activeParams}B active per token, all ${model.params}B loaded into memory`}
                   className="shrink-0 rounded border border-violet-300 bg-violet-50 px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-700 dark:border-violet-700/60 dark:bg-violet-950/40 dark:text-violet-300"
                 >
                   MoE

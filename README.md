@@ -14,8 +14,8 @@ Total memory is the sum of three terms:
 total = weights + kv_cache + framework_overhead
 ```
 
-- **weights** = `params × bytes_per_param` (quantization byte averages from llama.cpp).
-- **kv_cache** = `2 × kv_heads × head_dim × ctx × 2 bytes × layers` at FP16. For mixed-attention models (Gemma 2/3) the sliding layers use `ctx_sliding = min(ctx, sliding_window)`.
+- **weights** = `params × bytes_per_param` (quantization byte averages from llama.cpp). For MoE models (Mixtral, Qwen 3 -A* variants) `params` is the **total** count — all experts must be in memory for inference. Active params per token only affect compute speed and aren't modeled here.
+- **kv_cache** = `2 × kv_heads × head_dim × ctx × 2 bytes × layers` at FP16. For mixed-attention models (Gemma 2/3) the sliding layers use `ctx_sliding = min(ctx, sliding_window)`. KV cache is per-attention-layer regardless of MoE.
 - **framework_overhead** = a flat 0.5 GB.
 
 The displayed range is the point estimate scaled by 0.95× (low) and 1.20× (high) to reflect framework / per-tensor variability.
@@ -27,7 +27,8 @@ All architecture data (`hidden_size`, `num_hidden_layers`, `num_attention_heads`
 - **Single-batch inference** is assumed.
 - **Framework overhead** is approximated as a flat 0.5 GB. Real overhead depends heavily on engine (llama.cpp vs vLLM vs transformers).
 - **Quant byte averages** are llama.cpp published BPW values divided by 8. Real GGUF sizes vary slightly per model because K-quants apply different bit widths to different tensors.
-- **MLA attention** (DeepSeek V3) and **MoE active-vs-total** accounting are not modeled in v1.
+- **MLA attention** (DeepSeek V3) is not modeled — its KV math differs and it needs its own pass.
+- **MoE compute speed** isn't shown — only memory. Active-params-per-token is surfaced in the expanded row for context, but the total-memory calculation correctly uses total params.
 - **No multi-GPU sharding** — totals assume the model lives in one place.
 - **No activation memory** — negligible for inference at batch size 1, but real for larger batches / training.
 
@@ -51,7 +52,9 @@ All architecture data (`hidden_size`, `num_hidden_layers`, `num_attention_heads`
    }
    ```
 
-   Set the override fields only when the architecture needs it (mixed attention, MoE, etc.).
+   Set the override fields only when the architecture needs it:
+   - Mixed attention (Gemma 2/3): `attentionOverride: "mixed"`, `slidingWindowSize`, `fullAttentionRatio`.
+   - MoE (Mixtral, Qwen 3 -A*): `isMoE: true` and `activeParams` (in billions, the published per-token active count). Total `params` still drives the memory math.
 
 2. Run `npm run fetch-models`. This pulls `config.json`, validates the schema, and rewrites `src/data/models.json`. If the schema fails it tells you exactly what's wrong.
 

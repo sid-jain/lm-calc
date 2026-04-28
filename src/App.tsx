@@ -49,7 +49,7 @@ export function App(): JSX.Element {
 
       <p className="mb-6 text-sm text-slate-600 dark:text-slate-400">
         Pick a RAM (or VRAM) budget, context length, and quantization. The list below shows which
-        open-weight LLMs — Llama, Qwen, Gemma, Mistral, Phi, DeepSeek — actually fit, with weights /
+        open-weight LLMs (Llama, Qwen, Gemma, Mistral, Phi, DeepSeek) actually fit, with weights /
         KV cache / overhead breakdowns derived from each model's HuggingFace{' '}
         <code className="rounded bg-slate-100 px-1 py-0.5 text-xs dark:bg-slate-800">config.json</code>.
       </p>

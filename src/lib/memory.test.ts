@@ -109,10 +109,59 @@ describe('estimateMemory', () => {
   });
 });
 
+const MIXTRAL_8X7B: Model = {
+  id: 'mixtral-8x7b',
+  displayName: 'Mixtral 8x7B',
+  family: 'Mixtral',
+  developer: 'Mistral AI',
+  hfRepo: 'mistralai/Mixtral-8x7B-v0.1',
+  params: 46.703,
+  isMoE: true,
+  activeParams: 12.88,
+  arch: {
+    layers: 32,
+    attnHeads: 32,
+    kvHeads: 8,
+    headDim: 128,
+    hiddenSize: 4096,
+    vocabSize: 32000,
+    tiedEmbeddings: false,
+    maxContext: 32768,
+    attentionType: 'gqa',
+    slidingWindowSize: null,
+    fullAttentionRatio: null,
+  },
+};
+
+describe('MoE invariants', () => {
+  test('weights use total params, not active', () => {
+    // 46.703 * 0.604 = 28.208612 GB; the wrong answer (using activeParams) would be ~7.78 GB.
+    expect(
+      weightsGB(MIXTRAL_8X7B, {
+        id: 'q4_k_m',
+        name: 'Q4_K_M',
+        bytesPerParam: 0.604,
+        description: '',
+      }),
+    ).toBeCloseTo(28.208612, 6);
+  });
+
+  test('KV cache ignores isMoE / activeParams (depends only on attention arch)', () => {
+    // 32 * 2 * 8 * 128 * 8192 * 2 / 1e9 = 1.073741824 — same formula as a dense GQA model.
+    expect(kvCacheGB(MIXTRAL_8X7B, 8192)).toBeCloseTo(1.073741824, 9);
+  });
+});
+
 describe('schema validation', () => {
   test('all models in models.json pass schema', async () => {
     const { ModelsSchema } = await import('./schema');
     const data = await import('../data/models.json');
     expect(() => ModelsSchema.parse(data.default)).not.toThrow();
+  });
+
+  test('MoE without activeParams is rejected', async () => {
+    const { ModelSchema } = await import('./schema');
+    const result = ModelSchema.safeParse({ ...MIXTRAL_8X7B, activeParams: null });
+    expect(result.success).toBe(false);
   });
 });
