@@ -19,9 +19,11 @@ export const ModelSchema = z
       vocabSize: z.number().int().positive(),
       tiedEmbeddings: z.boolean(),
       maxContext: z.number().int().positive(),
-      attentionType: z.enum(['full', 'gqa', 'mqa', 'mixed']),
+      attentionType: z.enum(['full', 'gqa', 'mqa', 'mixed', 'mla']),
       slidingWindowSize: z.number().int().positive().nullable(),
       fullAttentionRatio: z.number().min(0).max(1).nullable(),
+      kvLoraRank: z.number().int().positive().nullable(),
+      qkRopeHeadDim: z.number().int().positive().nullable(),
     }),
   })
   .refine((m) => m.arch.kvHeads <= m.arch.attnHeads, 'kvHeads cannot exceed attnHeads')
@@ -30,6 +32,12 @@ export const ModelSchema = z
       m.arch.attentionType !== 'mixed' ||
       (m.arch.slidingWindowSize !== null && m.arch.fullAttentionRatio !== null),
     'mixed attention requires slidingWindowSize and fullAttentionRatio',
+  )
+  .refine(
+    (m) =>
+      m.arch.attentionType !== 'mla' ||
+      (m.arch.kvLoraRank !== null && m.arch.qkRopeHeadDim !== null),
+    'mla attention requires kvLoraRank and qkRopeHeadDim',
   )
   .refine((m) => !m.isMoE || m.activeParams !== null, 'MoE models require activeParams');
 

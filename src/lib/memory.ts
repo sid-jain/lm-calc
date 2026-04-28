@@ -12,8 +12,23 @@ export function weightsGB(model: Model, quant: QuantLevel): number {
 
 export function kvCacheGB(model: Model, contextLen: number): number {
   const ctx = Math.min(contextLen, model.arch.maxContext);
-  const { layers, kvHeads, headDim, attentionType, slidingWindowSize, fullAttentionRatio } =
-    model.arch;
+  const {
+    layers,
+    kvHeads,
+    headDim,
+    attentionType,
+    slidingWindowSize,
+    fullAttentionRatio,
+    kvLoraRank,
+    qkRopeHeadDim,
+  } = model.arch;
+
+  if (attentionType === 'mla') {
+    // MLA stores a compressed KV latent + a rope-K cache, shared across all heads (per layer).
+    // Per token per layer: (kv_lora_rank + qk_rope_head_dim) × 2 bytes (FP16).
+    const perTokenPerLayer = ((kvLoraRank ?? 0) + (qkRopeHeadDim ?? 0)) * 2;
+    return (layers * perTokenPerLayer * ctx) / 1e9;
+  }
 
   const bytesPerLayerAt = (c: number) => 2 * kvHeads * headDim * c * 2;
 

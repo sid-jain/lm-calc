@@ -101,7 +101,11 @@ export function App(): JSX.Element {
           <li>
             <strong>KV cache</strong>:{' '}
             <code>2 × kvHeads × headDim × ctx × 2 bytes × layers</code> at FP16. Mixed-attention
-            models (Gemma 2/3) use the sliding window for sliding layers.
+            models (Gemma 2/3) use the sliding window for sliding layers.{' '}
+            <strong>MLA</strong> models (DeepSeek V3, Kimi K2, Moonlight) instead store a
+            compressed latent and a small rope cache:{' '}
+            <code>(kv_lora_rank + qk_rope_head_dim) × 2 bytes × layers × ctx</code>, ~30× smaller
+            than naive GQA.
           </li>
           <li>
             <strong>MoE</strong> (Mixtral, Qwen 3 -A* variants): all experts must be loaded into
@@ -114,10 +118,7 @@ export function App(): JSX.Element {
             applies a 0.50–0.85× efficiency factor on top of the theoretical maximum to reflect
             real engine overhead. Prefill (prompt processing) is compute-bound and not modeled.
           </li>
-          <li>
-            Single-batch inference assumed. No multi-GPU sharding. MLA attention (DeepSeek V3) is
-            still out of scope for v1.
-          </li>
+          <li>Single-batch inference assumed. No multi-GPU sharding.</li>
           <li>
             Architecture data is fetched from each model's <code>config.json</code> on HuggingFace
             and validated by zod at build time.

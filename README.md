@@ -23,7 +23,7 @@ total = weights + kv_cache + framework_overhead
 ```
 
 - **weights** = `params × bytes_per_param` (quantization byte averages from llama.cpp). For MoE models (Mixtral, Qwen 3 -A* variants) `params` is the **total** count — all experts must be in memory for inference.
-- **kv_cache** = `2 × kv_heads × head_dim × ctx × 2 bytes × layers` at FP16. For mixed-attention models (Gemma 2/3) the sliding layers use `ctx_sliding = min(ctx, sliding_window)`. KV cache is per-attention-layer regardless of MoE.
+- **kv_cache** = `2 × kv_heads × head_dim × ctx × 2 bytes × layers` at FP16. For mixed-attention models (Gemma 2/3) the sliding layers use `ctx_sliding = min(ctx, sliding_window)`. KV cache is per-attention-layer regardless of MoE. **MLA** models (DeepSeek V3, Kimi K2, Moonlight) instead store a compressed latent + small rope cache: `(kv_lora_rank + qk_rope_head_dim) × 2 bytes × layers × ctx` — typically ~30× smaller than naive GQA at the same dimensions.
 - **framework_overhead** = a flat 0.5 GB.
 
 The displayed memory range is the point estimate scaled by 0.95× (low) and 1.20× (high) to reflect framework / per-tensor variability.
@@ -45,7 +45,6 @@ All architecture data (`hidden_size`, `num_hidden_layers`, `num_attention_heads`
 - **Single-batch inference** is assumed.
 - **Framework overhead** is approximated as a flat 0.5 GB. Real overhead depends heavily on engine (llama.cpp vs vLLM vs transformers).
 - **Quant byte averages** are llama.cpp published BPW values divided by 8. Real GGUF sizes vary slightly per model because K-quants apply different bit widths to different tensors.
-- **MLA attention** (DeepSeek V3) is not modeled — its KV math differs and it needs its own pass.
 - **Prefill speed** (compute-bound, depends on FLOPS) isn't modeled. The displayed tok/s is decode-only.
 - **MoE routing overhead** in real systems often re-reads experts due to routing variance. The 0.50× low end of the speed range captures this; the high end is closer to dense behavior.
 - **Per-engine differences** (llama.cpp vs vLLM vs MLX vs Transformers) are folded into the single 0.50–0.85× efficiency band.

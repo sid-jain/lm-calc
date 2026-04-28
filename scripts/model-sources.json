@@ -442,6 +442,32 @@
     "activeParams": 39.0
   },
   {
+    "id": "moonlight-16b-a3b",
+    "displayName": "Moonlight 16B-A3B",
+    "family": "Kimi",
+    "developer": "Moonshot AI",
+    "hfRepo": "moonshotai/Moonlight-16B-A3B",
+    "params": 15.96,
+    "attentionOverride": null,
+    "slidingWindowSize": null,
+    "fullAttentionRatio": null,
+    "isMoE": true,
+    "activeParams": 3.0
+  },
+  {
+    "id": "kimi-k2",
+    "displayName": "Kimi K2 1T-A32B",
+    "family": "Kimi",
+    "developer": "Moonshot AI",
+    "hfRepo": "moonshotai/Kimi-K2-Instruct",
+    "params": 1026.471,
+    "attentionOverride": null,
+    "slidingWindowSize": null,
+    "fullAttentionRatio": null,
+    "isMoE": true,
+    "activeParams": 32.0
+  },
+  {
     "id": "deepseek-r1-distill-llama-8b",
     "displayName": "DeepSeek R1 Distill Llama 8B",
     "family": "DeepSeek R1 Distill",

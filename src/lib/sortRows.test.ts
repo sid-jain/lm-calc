@@ -28,6 +28,8 @@ function makeRow(overrides: Partial<Model>): Row {
       attentionType: 'gqa',
       slidingWindowSize: null,
       fullAttentionRatio: null,
+      kvLoraRank: null,
+      qkRopeHeadDim: null,
     },
     ...overrides,
   };

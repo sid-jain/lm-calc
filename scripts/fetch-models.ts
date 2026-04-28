@@ -38,6 +38,8 @@ interface HfConfig {
   tie_word_embeddings?: boolean;
   head_dim?: number;
   sliding_window?: number | null;
+  kv_lora_rank?: number | null;
+  qk_rope_head_dim?: number | null;
 }
 
 async function fetchConfig(repo: string): Promise<HfConfig> {
@@ -64,8 +66,13 @@ function determineAttention(
   override: AttentionType | null,
   attnHeads: number,
   kvHeads: number,
+  cfg: HfConfig,
 ): AttentionType {
   if (override) return override;
+  // Presence of kv_lora_rank in the config signals MLA (DeepSeek V3 family,
+  // Kimi K2, Moonlight). Detected before GQA/full inference because num_key_value_heads
+  // is meaningless for MLA's KV cache size.
+  if (cfg.kv_lora_rank && cfg.qk_rope_head_dim) return 'mla';
   if (kvHeads === attnHeads) return 'full';
   if (kvHeads === 1) return 'mqa';
   return 'gqa';
@@ -93,7 +100,7 @@ async function buildModel(src: SourceEntry): Promise<Model> {
   );
   const tiedEmbeddings = cfg.tie_word_embeddings ?? false;
   const headDim = cfg.head_dim ?? Math.floor(hiddenSize / attnHeads);
-  const attentionType = determineAttention(src.attentionOverride, attnHeads, kvHeads);
+  const attentionType = determineAttention(src.attentionOverride, attnHeads, kvHeads, cfg);
 
   return {
     id: src.id,
@@ -116,6 +123,8 @@ async function buildModel(src: SourceEntry): Promise<Model> {
       attentionType,
       slidingWindowSize: src.slidingWindowSize,
       fullAttentionRatio: src.fullAttentionRatio,
+      kvLoraRank: cfg.kv_lora_rank ?? null,
+      qkRopeHeadDim: cfg.qk_rope_head_dim ?? null,
     },
   };
 }

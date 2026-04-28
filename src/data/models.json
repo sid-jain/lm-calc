@@ -19,7 +19,9 @@
       "maxContext": 32768,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -42,7 +44,9 @@
       "maxContext": 40960,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -65,7 +69,9 @@
       "maxContext": 32768,
       "attentionType": "mixed",
       "slidingWindowSize": 512,
-      "fullAttentionRatio": 0.1667
+      "fullAttentionRatio": 0.1667,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -88,7 +94,9 @@
       "maxContext": 131072,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -111,7 +119,9 @@
       "maxContext": 40960,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -134,7 +144,9 @@
       "maxContext": 8192,
       "attentionType": "mixed",
       "slidingWindowSize": 4096,
-      "fullAttentionRatio": 0.5
+      "fullAttentionRatio": 0.5,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -157,7 +169,9 @@
       "maxContext": 32768,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -180,7 +194,9 @@
       "maxContext": 131072,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -203,7 +219,9 @@
       "maxContext": 131072,
       "attentionType": "full",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -226,7 +244,9 @@
       "maxContext": 40960,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -249,7 +269,9 @@
       "maxContext": 131072,
       "attentionType": "mixed",
       "slidingWindowSize": 1024,
-      "fullAttentionRatio": 0.1667
+      "fullAttentionRatio": 0.1667,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -272,7 +294,9 @@
       "maxContext": 32768,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -295,7 +319,9 @@
       "maxContext": 131072,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -318,7 +344,9 @@
       "maxContext": 131072,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -341,7 +369,9 @@
       "maxContext": 131072,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -364,7 +394,9 @@
       "maxContext": 40960,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -387,7 +419,9 @@
       "maxContext": 8192,
       "attentionType": "mixed",
       "slidingWindowSize": 4096,
-      "fullAttentionRatio": 0.5
+      "fullAttentionRatio": 0.5,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -410,7 +444,9 @@
       "maxContext": 131072,
       "attentionType": "mixed",
       "slidingWindowSize": 1024,
-      "fullAttentionRatio": 0.1667
+      "fullAttentionRatio": 0.1667,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -433,7 +469,9 @@
       "maxContext": 16384,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -456,7 +494,9 @@
       "maxContext": 40960,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -479,7 +519,9 @@
       "maxContext": 131072,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -502,7 +544,34 @@
       "maxContext": 131072,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
+    }
+  },
+  {
+    "id": "moonlight-16b-a3b",
+    "displayName": "Moonlight 16B-A3B",
+    "family": "Kimi",
+    "developer": "Moonshot AI",
+    "hfRepo": "moonshotai/Moonlight-16B-A3B",
+    "params": 15.96,
+    "isMoE": true,
+    "activeParams": 3,
+    "arch": {
+      "layers": 27,
+      "attnHeads": 16,
+      "kvHeads": 16,
+      "headDim": 128,
+      "hiddenSize": 2048,
+      "vocabSize": 163840,
+      "tiedEmbeddings": false,
+      "maxContext": 8192,
+      "attentionType": "mla",
+      "slidingWindowSize": null,
+      "fullAttentionRatio": null,
+      "kvLoraRank": 512,
+      "qkRopeHeadDim": 64
     }
   },
   {
@@ -525,7 +594,9 @@
       "maxContext": 32768,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -548,7 +619,9 @@
       "maxContext": 8192,
       "attentionType": "mixed",
       "slidingWindowSize": 4096,
-      "fullAttentionRatio": 0.5
+      "fullAttentionRatio": 0.5,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -571,7 +644,9 @@
       "maxContext": 131072,
       "attentionType": "mixed",
       "slidingWindowSize": 1024,
-      "fullAttentionRatio": 0.1667
+      "fullAttentionRatio": 0.1667,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -594,7 +669,9 @@
       "maxContext": 40960,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -617,7 +694,9 @@
       "maxContext": 40960,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -640,7 +719,9 @@
       "maxContext": 131072,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -663,7 +744,9 @@
       "maxContext": 131072,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -686,7 +769,9 @@
       "maxContext": 32768,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -709,7 +794,9 @@
       "maxContext": 131072,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -732,7 +819,9 @@
       "maxContext": 131072,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -755,7 +844,9 @@
       "maxContext": 131072,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -778,7 +869,9 @@
       "maxContext": 262144,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -801,7 +894,9 @@
       "maxContext": 65536,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -824,7 +919,9 @@
       "maxContext": 40960,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
     }
   },
   {
@@ -847,7 +944,34 @@
       "maxContext": 262144,
       "attentionType": "gqa",
       "slidingWindowSize": null,
-      "fullAttentionRatio": null
+      "fullAttentionRatio": null,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
+    }
+  },
+  {
+    "id": "kimi-k2",
+    "displayName": "Kimi K2 1T-A32B",
+    "family": "Kimi",
+    "developer": "Moonshot AI",
+    "hfRepo": "moonshotai/Kimi-K2-Instruct",
+    "params": 1026.471,
+    "isMoE": true,
+    "activeParams": 32,
+    "arch": {
+      "layers": 61,
+      "attnHeads": 64,
+      "kvHeads": 64,
+      "headDim": 112,
+      "hiddenSize": 7168,
+      "vocabSize": 163840,
+      "tiedEmbeddings": false,
+      "maxContext": 131072,
+      "attentionType": "mla",
+      "slidingWindowSize": null,
+      "fullAttentionRatio": null,
+      "kvLoraRank": 512,
+      "qkRopeHeadDim": 64
     }
   }
 ]

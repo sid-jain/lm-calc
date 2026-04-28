@@ -23,6 +23,8 @@ const LLAMA_3_1_8B: Model = {
     attentionType: 'gqa',
     slidingWindowSize: null,
     fullAttentionRatio: null,
+    kvLoraRank: null,
+    qkRopeHeadDim: null,
   },
 };
 
@@ -47,6 +49,8 @@ const GEMMA_2_9B: Model = {
     attentionType: 'mixed',
     slidingWindowSize: 4096,
     fullAttentionRatio: 0.5,
+    kvLoraRank: null,
+    qkRopeHeadDim: null,
   },
 };
 
@@ -86,6 +90,57 @@ describe('kvCacheGB — mixed attention', () => {
   });
   test('Gemma 2 9B at 4096 ctx (≤ sliding window, both layer types use same ctx)', () => {
     expect(kvCacheGB(GEMMA_2_9B, 4096)).toBeCloseTo(1.409286144, 9);
+  });
+});
+
+const KIMI_K2: Model = {
+  id: 'kimi-k2',
+  displayName: 'Kimi K2',
+  family: 'Kimi',
+  developer: 'Moonshot AI',
+  hfRepo: 'moonshotai/Kimi-K2-Instruct',
+  params: 1026.5,
+  isMoE: true,
+  activeParams: 32.0,
+  arch: {
+    layers: 61,
+    attnHeads: 64,
+    kvHeads: 64,
+    headDim: 192,
+    hiddenSize: 7168,
+    vocabSize: 163840,
+    tiedEmbeddings: false,
+    maxContext: 131072,
+    attentionType: 'mla',
+    slidingWindowSize: null,
+    fullAttentionRatio: null,
+    kvLoraRank: 512,
+    qkRopeHeadDim: 64,
+  },
+};
+
+describe('kvCacheGB — MLA', () => {
+  test('Kimi K2 at 8K ctx', () => {
+    // Per token per layer = (kv_lora_rank + qk_rope_head_dim) × 2 bytes (FP16)
+    //                     = (512 + 64) × 2 = 1152 bytes
+    // Total = 1152 × 61 layers × 8192 ctx / 1e9 = 0.575668224 GB
+    expect(kvCacheGB(KIMI_K2, 8192)).toBeCloseTo(0.575668224, 9);
+  });
+
+  test('MLA is dramatically smaller than the equivalent naive GQA would be', () => {
+    // Naive (kvHeads × headDim per layer) at K2's dims:
+    //   64 × 192 × 8192 × 2 (KV) × 2 (FP16) × 61 layers / 1e9 = 24.50 GB
+    // MLA: ~0.58 GB. Ratio > 30x. Locks in the MLA choice.
+    const mla = kvCacheGB(KIMI_K2, 8192);
+    const naive =
+      (KIMI_K2.arch.layers *
+        2 *
+        KIMI_K2.arch.kvHeads *
+        KIMI_K2.arch.headDim *
+        8192 *
+        2) /
+      1e9;
+    expect(naive / mla).toBeGreaterThan(30);
   });
 });
 
@@ -130,6 +185,8 @@ const MIXTRAL_8X7B: Model = {
     attentionType: 'gqa',
     slidingWindowSize: null,
     fullAttentionRatio: null,
+    kvLoraRank: null,
+    qkRopeHeadDim: null,
   },
 };
 

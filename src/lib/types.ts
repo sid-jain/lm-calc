@@ -1,4 +1,4 @@
-export type AttentionType = 'full' | 'gqa' | 'mqa' | 'mixed';
+export type AttentionType = 'full' | 'gqa' | 'mqa' | 'mixed' | 'mla';
 
 export interface Model {
   id: string;
@@ -21,6 +21,8 @@ export interface Model {
     attentionType: AttentionType;
     slidingWindowSize: number | null;
     fullAttentionRatio: number | null;
+    kvLoraRank: number | null;
+    qkRopeHeadDim: number | null;
   };
 }
 
