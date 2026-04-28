@@ -293,6 +293,58 @@
     "activeParams": null
   },
   {
+    "id": "qwen-3-30b-a3b",
+    "displayName": "Qwen 3 30B-A3B",
+    "family": "Qwen 3",
+    "developer": "Alibaba",
+    "hfRepo": "Qwen/Qwen3-30B-A3B",
+    "params": 30.532,
+    "attentionOverride": null,
+    "slidingWindowSize": null,
+    "fullAttentionRatio": null,
+    "isMoE": true,
+    "activeParams": 3.3
+  },
+  {
+    "id": "qwen-3-235b-a22b",
+    "displayName": "Qwen 3 235B-A22B",
+    "family": "Qwen 3",
+    "developer": "Alibaba",
+    "hfRepo": "Qwen/Qwen3-235B-A22B",
+    "params": 235.094,
+    "attentionOverride": null,
+    "slidingWindowSize": null,
+    "fullAttentionRatio": null,
+    "isMoE": true,
+    "activeParams": 22.0
+  },
+  {
+    "id": "mixtral-8x7b",
+    "displayName": "Mixtral 8x7B",
+    "family": "Mixtral",
+    "developer": "Mistral AI",
+    "hfRepo": "mistralai/Mixtral-8x7B-v0.1",
+    "params": 46.703,
+    "attentionOverride": null,
+    "slidingWindowSize": null,
+    "fullAttentionRatio": null,
+    "isMoE": true,
+    "activeParams": 12.88
+  },
+  {
+    "id": "mixtral-8x22b",
+    "displayName": "Mixtral 8x22B",
+    "family": "Mixtral",
+    "developer": "Mistral AI",
+    "hfRepo": "mistralai/Mixtral-8x22B-v0.1",
+    "params": 140.621,
+    "attentionOverride": null,
+    "slidingWindowSize": null,
+    "fullAttentionRatio": null,
+    "isMoE": true,
+    "activeParams": 39.0
+  },
+  {
     "id": "deepseek-r1-distill-llama-8b",
     "displayName": "DeepSeek R1 Distill Llama 8B",
     "family": "DeepSeek R1 Distill",

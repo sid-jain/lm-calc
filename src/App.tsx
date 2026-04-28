@@ -91,8 +91,13 @@ export function App(): JSX.Element {
             models (Gemma 2/3) use the sliding window for sliding layers.
           </li>
           <li>
-            Single-batch inference assumed. No multi-GPU sharding. MLA (DeepSeek V3) and MoE
-            active-vs-total accounting are out of scope for v1.
+            <strong>MoE</strong> (Mixtral, Qwen 3 -A* variants): all experts must be loaded into
+            memory, so weights use <em>total</em> params. <em>Active</em> params (shown in the
+            expanded view) only affect compute speed per token, which this tool doesn't model.
+          </li>
+          <li>
+            Single-batch inference assumed. No multi-GPU sharding. MLA attention (DeepSeek V3) is
+            still out of scope for v1.
           </li>
           <li>
             Architecture data is fetched from each model's <code>config.json</code> on HuggingFace

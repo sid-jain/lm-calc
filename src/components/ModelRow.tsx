@@ -69,7 +69,17 @@ export function ModelRow({
       >
         <div className="flex items-baseline justify-between gap-3 sm:contents">
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium">{model.displayName}</div>
+            <div className="flex items-center gap-1.5">
+              <span className="truncate text-sm font-medium">{model.displayName}</span>
+              {model.isMoE && (
+                <span
+                  title={`Mixture of Experts — ~${model.activeParams}B active per token, all ${model.params}B loaded into memory`}
+                  className="shrink-0 rounded border border-violet-300 bg-violet-50 px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-700 dark:border-violet-700/60 dark:bg-violet-950/40 dark:text-violet-300"
+                >
+                  MoE
+                </span>
+              )}
+            </div>
             <div className="truncate text-xs text-slate-500 dark:text-slate-400">
               {model.developer} · {model.family}
             </div>
@@ -115,7 +125,16 @@ export function ModelRow({
           </dl>
           <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-slate-500 sm:grid-cols-4 dark:text-slate-400">
             <div>
-              Params: <span className="tabular-nums text-slate-700 dark:text-slate-300">{model.params}B</span>
+              Params:{' '}
+              <span className="tabular-nums text-slate-700 dark:text-slate-300">
+                {model.params}B
+              </span>
+              {model.isMoE && model.activeParams !== null && (
+                <span className="text-slate-500 dark:text-slate-400">
+                  {' '}
+                  (<span className="tabular-nums">{model.activeParams}B</span> active)
+                </span>
+              )}
             </div>
             <div>
               Layers: <span className="tabular-nums text-slate-700 dark:text-slate-300">{model.arch.layers}</span>

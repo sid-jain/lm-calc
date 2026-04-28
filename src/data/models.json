@@ -460,6 +460,29 @@
     }
   },
   {
+    "id": "qwen-3-30b-a3b",
+    "displayName": "Qwen 3 30B-A3B",
+    "family": "Qwen 3",
+    "developer": "Alibaba",
+    "hfRepo": "Qwen/Qwen3-30B-A3B",
+    "params": 30.532,
+    "isMoE": true,
+    "activeParams": 3.3,
+    "arch": {
+      "layers": 48,
+      "attnHeads": 32,
+      "kvHeads": 4,
+      "headDim": 128,
+      "hiddenSize": 2048,
+      "vocabSize": 151936,
+      "tiedEmbeddings": false,
+      "maxContext": 40960,
+      "attentionType": "gqa",
+      "slidingWindowSize": null,
+      "fullAttentionRatio": null
+    }
+  },
+  {
     "id": "qwen-3-32b",
     "displayName": "Qwen 3 32B",
     "family": "Qwen 3",
@@ -529,6 +552,29 @@
     }
   },
   {
+    "id": "mixtral-8x7b",
+    "displayName": "Mixtral 8x7B",
+    "family": "Mixtral",
+    "developer": "Mistral AI",
+    "hfRepo": "mistralai/Mixtral-8x7B-v0.1",
+    "params": 46.703,
+    "isMoE": true,
+    "activeParams": 12.88,
+    "arch": {
+      "layers": 32,
+      "attnHeads": 32,
+      "kvHeads": 8,
+      "headDim": 128,
+      "hiddenSize": 4096,
+      "vocabSize": 32000,
+      "tiedEmbeddings": false,
+      "maxContext": 32768,
+      "attentionType": "gqa",
+      "slidingWindowSize": null,
+      "fullAttentionRatio": null
+    }
+  },
+  {
     "id": "llama-3-3-70b",
     "displayName": "Llama 3.3 70B",
     "family": "Llama 3",
@@ -592,6 +638,52 @@
       "vocabSize": 152064,
       "tiedEmbeddings": false,
       "maxContext": 131072,
+      "attentionType": "gqa",
+      "slidingWindowSize": null,
+      "fullAttentionRatio": null
+    }
+  },
+  {
+    "id": "mixtral-8x22b",
+    "displayName": "Mixtral 8x22B",
+    "family": "Mixtral",
+    "developer": "Mistral AI",
+    "hfRepo": "mistralai/Mixtral-8x22B-v0.1",
+    "params": 140.621,
+    "isMoE": true,
+    "activeParams": 39,
+    "arch": {
+      "layers": 56,
+      "attnHeads": 48,
+      "kvHeads": 8,
+      "headDim": 128,
+      "hiddenSize": 6144,
+      "vocabSize": 32000,
+      "tiedEmbeddings": false,
+      "maxContext": 65536,
+      "attentionType": "gqa",
+      "slidingWindowSize": null,
+      "fullAttentionRatio": null
+    }
+  },
+  {
+    "id": "qwen-3-235b-a22b",
+    "displayName": "Qwen 3 235B-A22B",
+    "family": "Qwen 3",
+    "developer": "Alibaba",
+    "hfRepo": "Qwen/Qwen3-235B-A22B",
+    "params": 235.094,
+    "isMoE": true,
+    "activeParams": 22,
+    "arch": {
+      "layers": 94,
+      "attnHeads": 64,
+      "kvHeads": 4,
+      "headDim": 128,
+      "hiddenSize": 4096,
+      "vocabSize": 151936,
+      "tiedEmbeddings": false,
+      "maxContext": 40960,
       "attentionType": "gqa",
       "slidingWindowSize": null,
       "fullAttentionRatio": null
