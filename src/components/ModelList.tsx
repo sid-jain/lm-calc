@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { estimateMemory } from '../lib/memory';
+import { decodeTokensPerSecond, estimateMemory } from '../lib/memory';
+import { SPEED_STYLES, speedTier, type SpeedTier } from '../lib/speedTier';
 import {
   compareWithin,
   SORT_OPTIONS,
@@ -75,12 +76,54 @@ export function ModelList({
   const totalCount = grouped.fits.length + grouped.tight.length + grouped.over.length;
   const fitCount = grouped.fits.length + grouped.tight.length;
 
+  const speedCounts = useMemo(() => {
+    const counts: Record<SpeedTier, number> = { fast: 0, usable: 0, slow: 0 };
+    for (const key of ['fits', 'tight'] as const) {
+      for (const row of grouped[key]) {
+        const speed = decodeTokensPerSecond(row.model, quant, contextLen, bandwidthGBps);
+        const mid = (speed.lowTps + speed.highTps) / 2;
+        counts[speedTier(mid)]++;
+      }
+    }
+    return counts;
+  }, [grouped, quant, contextLen, bandwidthGBps]);
+
   return (
     <div className="rounded-lg border border-slate-200 dark:border-slate-800">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-3 py-2 text-sm dark:border-slate-800">
-        <div className="text-slate-600 dark:text-slate-400">
-          <span className="font-semibold text-slate-900 dark:text-slate-100">{fitCount}</span> of{' '}
-          {totalCount} models fit in {ramGB} GB
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-slate-600 dark:text-slate-400">
+          <div>
+            <span className="font-semibold text-slate-900 dark:text-slate-100">{fitCount}</span> of{' '}
+            {totalCount} fit in {ramGB} GB
+          </div>
+          {fitCount > 0 && (
+            <div
+              className="flex items-center gap-2"
+              title={`Decode-speed tiers among the ${fitCount} models that fit. Fast: ≥${20} tok/s. Usable: 5–20 tok/s. Slow: <5 tok/s.`}
+            >
+              <span>|</span>
+              {(['fast', 'usable', 'slow'] as const).map((tier) => {
+                const style = SPEED_STYLES[tier];
+                return (
+                  <span
+                    key={tier}
+                    title={`${style.label} (${style.threshold})`}
+                    className="inline-flex items-center gap-1"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`text-xs font-bold leading-none tracking-tighter ${style.tone}`}
+                    >
+                      {style.icon}
+                    </span>
+                    <span className="tabular-nums font-medium text-slate-900 dark:text-slate-100">
+                      {speedCounts[tier]}
+                    </span>
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </div>
         <label className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
           <span>Sort:</span>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { decodeTokensPerSecond } from '../lib/memory';
+import { SPEED_STYLES, speedTier } from '../lib/speedTier';
 import type { MemoryEstimate, Model, QuantLevel } from '../lib/types';
 import { formatContext } from '../lib/contextSnaps';
 
@@ -24,20 +25,6 @@ const FIT_STYLES: Record<FitStatus, { tone: string; icon: string; label: string 
   fits: { tone: 'text-emerald-600 dark:text-emerald-400', icon: '✓', label: 'Fits' },
   tight: { tone: 'text-amber-600 dark:text-amber-400', icon: '⚠', label: 'Tight' },
   over: { tone: 'text-rose-600 dark:text-rose-400', icon: '✗', label: "Doesn't fit" },
-};
-
-type SpeedTier = 'fast' | 'usable' | 'slow';
-
-function speedTier(tps: number): SpeedTier {
-  if (tps >= 20) return 'fast';
-  if (tps >= 5) return 'usable';
-  return 'slow';
-}
-
-const SPEED_STYLES: Record<SpeedTier, { tone: string; icon: string; label: string }> = {
-  fast: { tone: 'text-emerald-600 dark:text-emerald-400', icon: '●●●', label: 'Fast' },
-  usable: { tone: 'text-amber-600 dark:text-amber-400', icon: '●●○', label: 'Usable' },
-  slow: { tone: 'text-rose-600 dark:text-rose-400', icon: '●○○', label: 'Slow' },
 };
 
 function fmtGB(n: number): string {
@@ -116,7 +103,10 @@ export function ModelRow({
             </span>
             <span className="sr-only">{fit.label}</span>
           </div>
-          <div className="flex items-center justify-end gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+          <div
+            className="flex items-center justify-end gap-1.5 text-sm text-slate-500 dark:text-slate-400"
+            title={`${spd.label} (${spd.threshold})`}
+          >
             <span>{fmtTpsRange(speed.lowTps, speed.highTps)}</span>
             <span
               aria-hidden="true"
