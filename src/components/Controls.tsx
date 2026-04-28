@@ -170,7 +170,7 @@ export function Controls({
             <optgroup key={group} label={group}>
               {devices.map((d) => (
                 <option key={d.id} value={d.id}>
-                  {d.name} — {d.bandwidthGBps} GB/s
+                  {d.name} | {d.bandwidthGBps} GB/s
                 </option>
               ))}
             </optgroup>

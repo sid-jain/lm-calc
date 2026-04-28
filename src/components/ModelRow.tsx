@@ -93,6 +93,14 @@ export function ModelRow({
                 MoE
               </span>
             )}
+            {ctxClamped && (
+              <span
+                title={`Requested context (${formatContext(contextLen)}) exceeds this model's max - clamped to ${formatContext(model.arch.maxContext)} for the KV calculation.`}
+                className="shrink-0 rounded border border-amber-300 bg-amber-50 px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300"
+              >
+                ctx {formatContext(model.arch.maxContext)}
+              </span>
+            )}
           </div>
           <div className="truncate text-xs text-slate-500 dark:text-slate-400">
             {model.developer} · {model.family}
@@ -199,7 +207,7 @@ export function ModelRow({
           </div>
           {ctxClamped && (
             <div className="mt-2 text-xs text-amber-700 dark:text-amber-400">
-              Note: requested context ({formatContext(contextLen)}) exceeds model max — clamped to{' '}
+              Note: requested context ({formatContext(contextLen)}) exceeds model max - clamped to{' '}
               {formatContext(model.arch.maxContext)} for the KV calculation.
             </div>
           )}
