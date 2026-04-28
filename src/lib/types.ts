@@ -38,3 +38,12 @@ export interface MemoryEstimate {
   totalGB: number;
   rangeGB: { low: number; high: number };
 }
+
+export interface SpeedEstimate {
+  theoreticalTps: number;
+  lowTps: number;
+  highTps: number;
+  weightBytesPerToken: number;
+  kvBytesPerToken: number;
+  bandwidthGBps: number;
+}

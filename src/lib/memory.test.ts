@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { weightsGB, kvCacheGB, estimateMemory } from './memory';
+import { weightsGB, kvCacheGB, estimateMemory, decodeTokensPerSecond } from './memory';
 import type { Model } from './types';
 
 const LLAMA_3_1_8B: Model = {
@@ -149,6 +149,46 @@ describe('MoE invariants', () => {
   test('KV cache ignores isMoE / activeParams (depends only on attention arch)', () => {
     // 32 * 2 * 8 * 128 * 8192 * 2 / 1e9 = 1.073741824 — same formula as a dense GQA model.
     expect(kvCacheGB(MIXTRAL_8X7B, 8192)).toBeCloseTo(1.073741824, 9);
+  });
+});
+
+describe('decodeTokensPerSecond', () => {
+  const Q4_K_M = { id: 'q4_k_m', name: 'Q4_K_M', bytesPerParam: 0.604, description: '' };
+
+  test('Llama 3.1 8B at Q4_K_M, 8K ctx, 1000 GB/s', () => {
+    // bytesPerToken = active_params * bytesPerParam * 1e9 + kv_bytes
+    //               = 8.030 * 0.604 * 1e9 + 1_073_741_824
+    //               = 4_850_120_000 + 1_073_741_824 = 5_923_861_824
+    const expectedBytesPerToken = 8.03 * 0.604 * 1e9 + 1_073_741_824;
+    const expectedTps = (1000 * 1e9) / expectedBytesPerToken;
+
+    const e = decodeTokensPerSecond(LLAMA_3_1_8B, Q4_K_M, 8192, 1000);
+    expect(e.weightBytesPerToken + e.kvBytesPerToken).toBeCloseTo(expectedBytesPerToken, 6);
+    expect(e.theoreticalTps).toBeCloseTo(expectedTps, 9);
+    expect(e.lowTps).toBeCloseTo(expectedTps * 0.5, 9);
+    expect(e.highTps).toBeCloseTo(expectedTps * 0.85, 9);
+  });
+
+  test('MoE uses activeParams, not total', () => {
+    // Mixtral 8x7B: total 46.703B, active 12.88B. The function must use 12.88.
+    const expectedWeightBytes = 12.88 * 0.604 * 1e9;
+    const expectedKvBytes = 1_073_741_824; // same KV math as Llama 8B (matching arch)
+
+    const e = decodeTokensPerSecond(MIXTRAL_8X7B, Q4_K_M, 8192, 1000);
+    expect(e.weightBytesPerToken).toBeCloseTo(expectedWeightBytes, 6);
+    expect(e.kvBytesPerToken).toBeCloseTo(expectedKvBytes, 6);
+
+    // If the function had wrongly used total params, weightBytes would be ~3.6× larger
+    // (46.703 / 12.88) and theoreticalTps would be much lower. This pins the active-params choice.
+    const wrongDenseBytes = 46.703 * 0.604 * 1e9 + expectedKvBytes;
+    const wrongTps = (1000 * 1e9) / wrongDenseBytes;
+    expect(e.theoreticalTps).toBeGreaterThan(wrongTps * 2);
+  });
+
+  test('theoreticalTps scales linearly with bandwidth', () => {
+    const at500 = decodeTokensPerSecond(LLAMA_3_1_8B, Q4_K_M, 8192, 500).theoreticalTps;
+    const at1000 = decodeTokensPerSecond(LLAMA_3_1_8B, Q4_K_M, 8192, 1000).theoreticalTps;
+    expect(at1000 / at500).toBeCloseTo(2, 9);
   });
 });
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Controls } from './components/Controls';
 import { ModelList } from './components/ModelList';
+import { DEVICES } from './lib/devices';
 import { models } from './lib/loadModels';
 import { QUANT_LEVELS } from './lib/quants';
 import { useTheme } from './lib/useTheme';
@@ -9,6 +10,8 @@ export function App(): JSX.Element {
   const [ramGB, setRamGB] = useState(16);
   const [contextLen, setContextLen] = useState(8192);
   const [quant, setQuant] = useState(QUANT_LEVELS.find((q) => q.id === 'q4_k_m')!);
+  const [device, setDevice] = useState(DEVICES.find((d) => d.id === 'apple-m3-pro')!);
+  const [customBandwidthGBps, setCustomBandwidthGBps] = useState(150);
   const { theme, toggle } = useTheme();
 
   return (
@@ -59,13 +62,23 @@ export function App(): JSX.Element {
           ramGB={ramGB}
           contextLen={contextLen}
           quant={quant}
+          device={device}
+          customBandwidthGBps={customBandwidthGBps}
           onRamGB={setRamGB}
           onContextLen={setContextLen}
           onQuant={setQuant}
+          onDevice={setDevice}
+          onCustomBandwidth={setCustomBandwidthGBps}
         />
 
         <div className="mt-6">
-          <ModelList models={models} quant={quant} contextLen={contextLen} ramGB={ramGB} />
+          <ModelList
+            models={models}
+            quant={quant}
+            contextLen={contextLen}
+            ramGB={ramGB}
+            bandwidthGBps={device.bandwidthGBps}
+          />
         </div>
       </main>
 
@@ -92,8 +105,14 @@ export function App(): JSX.Element {
           </li>
           <li>
             <strong>MoE</strong> (Mixtral, Qwen 3 -A* variants): all experts must be loaded into
-            memory, so weights use <em>total</em> params. <em>Active</em> params (shown in the
-            expanded view) only affect compute speed per token, which this tool doesn't model.
+            memory, so weights use <em>total</em> params. Decode speed uses <em>active</em>
+            params per token.
+          </li>
+          <li>
+            <strong>Decode speed</strong>: single-batch token generation is bandwidth-bound.{' '}
+            <code>tok/s ≈ bandwidth ÷ (active_weight_bytes + kv_bytes)</code>. The displayed range
+            applies a 0.50–0.85× efficiency factor on top of the theoretical maximum to reflect
+            real engine overhead. Prefill (prompt processing) is compute-bound and not modeled.
           </li>
           <li>
             Single-batch inference assumed. No multi-GPU sharding. MLA attention (DeepSeek V3) is

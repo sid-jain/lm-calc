@@ -1,8 +1,10 @@
-import type { Model, QuantLevel, MemoryEstimate } from './types';
+import type { Model, QuantLevel, MemoryEstimate, SpeedEstimate } from './types';
 
 const FRAMEWORK_OVERHEAD_GB = 0.5;
 const ESTIMATE_LOW_FACTOR = 0.95;
 const ESTIMATE_HIGH_FACTOR = 1.2;
+const DECODE_EFFICIENCY_LOW = 0.5;
+const DECODE_EFFICIENCY_HIGH = 0.85;
 
 export function weightsGB(model: Model, quant: QuantLevel): number {
   return model.params * quant.bytesPerParam;
@@ -25,6 +27,27 @@ export function kvCacheGB(model: Model, contextLen: number): number {
   }
 
   return (layers * bytesPerLayerAt(ctx)) / 1e9;
+}
+
+export function decodeTokensPerSecond(
+  model: Model,
+  quant: QuantLevel,
+  contextLen: number,
+  bandwidthGBps: number,
+): SpeedEstimate {
+  const activeParams = model.isMoE && model.activeParams !== null ? model.activeParams : model.params;
+  const weightBytesPerToken = activeParams * quant.bytesPerParam * 1e9;
+  const kvBytesPerToken = kvCacheGB(model, contextLen) * 1e9;
+  const bytesPerToken = weightBytesPerToken + kvBytesPerToken;
+  const theoreticalTps = (bandwidthGBps * 1e9) / bytesPerToken;
+  return {
+    theoreticalTps,
+    lowTps: theoreticalTps * DECODE_EFFICIENCY_LOW,
+    highTps: theoreticalTps * DECODE_EFFICIENCY_HIGH,
+    weightBytesPerToken,
+    kvBytesPerToken,
+    bandwidthGBps,
+  };
 }
 
 export function estimateMemory(

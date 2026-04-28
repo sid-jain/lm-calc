@@ -1,10 +1,18 @@
 # LLM RAM Calculator
 
-A static web tool that takes available RAM, context length, and quantization, and lists which open-weight LLMs fit. No backend, no accounts.
+A static web tool that takes available RAM, context length, quantization, and target hardware, and lists which open-weight LLMs fit and roughly how fast they decode (tokens per second). No backend, no accounts.
 
 ## Live demo
 
 <https://lmcalc.app>
+
+## What it shows
+
+For each model, given your inputs:
+
+- **Total memory estimate** (weights + KV cache + framework overhead) as a range, with a fit / tight / over-RAM bucket.
+- **Decode tok/s estimate** for the chosen device's memory bandwidth, as a range.
+- **Architecture detail** (params, layers, attention type, max context) on click.
 
 ## Methodology
 
@@ -14,11 +22,21 @@ Total memory is the sum of three terms:
 total = weights + kv_cache + framework_overhead
 ```
 
-- **weights** = `params × bytes_per_param` (quantization byte averages from llama.cpp). For MoE models (Mixtral, Qwen 3 -A* variants) `params` is the **total** count — all experts must be in memory for inference. Active params per token only affect compute speed and aren't modeled here.
+- **weights** = `params × bytes_per_param` (quantization byte averages from llama.cpp). For MoE models (Mixtral, Qwen 3 -A* variants) `params` is the **total** count — all experts must be in memory for inference.
 - **kv_cache** = `2 × kv_heads × head_dim × ctx × 2 bytes × layers` at FP16. For mixed-attention models (Gemma 2/3) the sliding layers use `ctx_sliding = min(ctx, sliding_window)`. KV cache is per-attention-layer regardless of MoE.
 - **framework_overhead** = a flat 0.5 GB.
 
-The displayed range is the point estimate scaled by 0.95× (low) and 1.20× (high) to reflect framework / per-tensor variability.
+The displayed memory range is the point estimate scaled by 0.95× (low) and 1.20× (high) to reflect framework / per-tensor variability.
+
+### Decode speed
+
+Single-batch token generation is bandwidth-bound:
+
+```
+tok/s ≈ memory_bandwidth ÷ (active_weight_bytes + kv_cache_bytes)
+```
+
+For dense models, `active_weight_bytes = params × bytes_per_param`. For MoE, only the active experts are read per token, so `params` is replaced by the model's `activeParams`. The displayed range applies a 0.50–0.85× efficiency factor to the theoretical maximum to reflect real engine overhead. Prefill (prompt processing) is compute-bound and not modeled.
 
 All architecture data (`hidden_size`, `num_hidden_layers`, `num_attention_heads`, `num_key_value_heads`, `head_dim`, `vocab_size`, `max_position_embeddings`, `tie_word_embeddings`, `sliding_window`) comes directly from each model's `config.json` on HuggingFace. It is fetched by `scripts/fetch-models.ts`, validated against a zod schema, and written to `src/data/models.json`. Bad data fails the build, not the runtime.
 
@@ -28,7 +46,9 @@ All architecture data (`hidden_size`, `num_hidden_layers`, `num_attention_heads`
 - **Framework overhead** is approximated as a flat 0.5 GB. Real overhead depends heavily on engine (llama.cpp vs vLLM vs transformers).
 - **Quant byte averages** are llama.cpp published BPW values divided by 8. Real GGUF sizes vary slightly per model because K-quants apply different bit widths to different tensors.
 - **MLA attention** (DeepSeek V3) is not modeled — its KV math differs and it needs its own pass.
-- **MoE compute speed** isn't shown — only memory. Active-params-per-token is surfaced in the expanded row for context, but the total-memory calculation correctly uses total params.
+- **Prefill speed** (compute-bound, depends on FLOPS) isn't modeled. The displayed tok/s is decode-only.
+- **MoE routing overhead** in real systems often re-reads experts due to routing variance. The 0.50× low end of the speed range captures this; the high end is closer to dense behavior.
+- **Per-engine differences** (llama.cpp vs vLLM vs MLX vs Transformers) are folded into the single 0.50–0.85× efficiency band.
 - **No multi-GPU sharding** — totals assume the model lives in one place.
 - **No activation memory** — negligible for inference at batch size 1, but real for larger batches / training.
 

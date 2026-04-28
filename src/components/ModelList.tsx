@@ -1,6 +1,12 @@
 import { useMemo, useState } from 'react';
 import { estimateMemory } from '../lib/memory';
-import type { MemoryEstimate, Model, QuantLevel } from '../lib/types';
+import {
+  compareWithin,
+  SORT_OPTIONS,
+  type Row,
+  type SortKey,
+} from '../lib/sortRows';
+import type { Model, QuantLevel } from '../lib/types';
 import { ModelRow } from './ModelRow';
 
 interface Props {
@@ -8,17 +14,8 @@ interface Props {
   quant: QuantLevel;
   contextLen: number;
   ramGB: number;
+  bandwidthGBps: number;
 }
-
-type SortKey = 'memory-asc' | 'params-asc' | 'params-desc' | 'name' | 'developer';
-
-const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: 'memory-asc', label: 'Total memory (smallest first)' },
-  { value: 'params-desc', label: 'Parameters (largest first)' },
-  { value: 'params-asc', label: 'Parameters (smallest first)' },
-  { value: 'name', label: 'Name (A–Z)' },
-  { value: 'developer', label: 'Developer (A–Z)' },
-];
 
 type BucketKey = 'fits' | 'tight' | 'over';
 const BUCKET_ORDER: BucketKey[] = ['fits', 'tight', 'over'];
@@ -50,30 +47,13 @@ function bucketOf(totalGB: number, ramGB: number): BucketKey {
   return 'over';
 }
 
-interface Row {
-  model: Model;
-  estimate: MemoryEstimate;
-}
-
-function compareWithin(a: Row, b: Row, key: SortKey): number {
-  switch (key) {
-    case 'memory-asc':
-      return a.estimate.totalGB - b.estimate.totalGB;
-    case 'params-asc':
-      return a.model.params - b.model.params;
-    case 'params-desc':
-      return b.model.params - a.model.params;
-    case 'name':
-      return a.model.displayName.localeCompare(b.model.displayName);
-    case 'developer':
-      return (
-        a.model.developer.localeCompare(b.model.developer) ||
-        a.model.params - b.model.params
-      );
-  }
-}
-
-export function ModelList({ models, quant, contextLen, ramGB }: Props): JSX.Element {
+export function ModelList({
+  models,
+  quant,
+  contextLen,
+  ramGB,
+  bandwidthGBps,
+}: Props): JSX.Element {
   const [sortKey, setSortKey] = useState<SortKey>('memory-asc');
 
   const grouped = useMemo(() => {
@@ -85,11 +65,12 @@ export function ModelList({ models, quant, contextLen, ramGB }: Props): JSX.Elem
     for (const row of all) {
       buckets[bucketOf(row.estimate.totalGB, ramGB)].push(row);
     }
+    const sortCtx = { quant, contextLen, bandwidthGBps };
     for (const key of BUCKET_ORDER) {
-      buckets[key].sort((a, b) => compareWithin(a, b, sortKey));
+      buckets[key].sort((a, b) => compareWithin(a, b, sortKey, sortCtx));
     }
     return buckets;
-  }, [models, quant, contextLen, ramGB, sortKey]);
+  }, [models, quant, contextLen, ramGB, bandwidthGBps, sortKey]);
 
   const totalCount = grouped.fits.length + grouped.tight.length + grouped.over.length;
   const fitCount = grouped.fits.length + grouped.tight.length;
@@ -140,6 +121,7 @@ export function ModelList({ models, quant, contextLen, ramGB }: Props): JSX.Elem
                   quant={quant}
                   contextLen={contextLen}
                   ramGB={ramGB}
+                  bandwidthGBps={bandwidthGBps}
                   estimate={estimate}
                 />
               ))}
