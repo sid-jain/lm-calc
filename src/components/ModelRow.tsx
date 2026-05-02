@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { decodeTokensPerSecond } from '../lib/memory';
+import { decodeTokensPerSecond, largestFittingQuant } from '../lib/memory';
+import { QUANT_LEVELS } from '../lib/quants';
 import { SPEED_STYLES, speedTier } from '../lib/speedTier';
 import type { MemoryEstimate, Model, QuantLevel } from '../lib/types';
 import { formatContext } from '../lib/contextSnaps';
@@ -55,11 +56,14 @@ export function ModelRow({
   estimate,
 }: Props): JSX.Element {
   const [open, setOpen] = useState(false);
-  const fit = FIT_STYLES[fitStatus(estimate.totalGB, ramGB)];
+  const status = fitStatus(estimate.totalGB, ramGB);
+  const fit = FIT_STYLES[status];
   const speed = decodeTokensPerSecond(model, quant, contextLen, bandwidthGBps);
   const speedMid = (speed.lowTps + speed.highTps) / 2;
   const spd = SPEED_STYLES[speedTier(speedMid)];
   const ctxClamped = contextLen > model.arch.maxContext;
+  const fallbackQuant =
+    status === 'over' ? largestFittingQuant(model, contextLen, ramGB, quant, QUANT_LEVELS) : null;
 
   return (
     <li className="border-b border-slate-200 last:border-b-0 dark:border-slate-800">
@@ -116,6 +120,14 @@ export function ModelRow({
             </span>
             <span className="sr-only">{spd.label}</span>
           </div>
+          {fallbackQuant && (
+            <div
+              className="text-xs text-slate-500 dark:text-slate-400"
+              title={`At ${quant.name} this model needs more than ${ramGB} GB. ${fallbackQuant.name} (${fallbackQuant.bytesPerParam} bytes/param) brings it under the limit.`}
+            >
+              Fits at {fallbackQuant.name}
+            </div>
+          )}
         </div>
       </button>
       {open && (

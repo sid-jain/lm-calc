@@ -73,6 +73,24 @@ export function decodeTokensPerSecond(
   };
 }
 
+// Find the highest-quality quant strictly smaller than `current` whose total memory still
+// fits in `ramGB`. Returns null if no smaller quant fits (or `current` is already the
+// smallest). `quants` is expected ordered from largest bytesPerParam to smallest, matching
+// QUANT_LEVELS — we walk it in order so the first hit is the highest-quality fit.
+export function largestFittingQuant(
+  model: Model,
+  contextLen: number,
+  ramGB: number,
+  current: QuantLevel,
+  quants: QuantLevel[],
+): QuantLevel | null {
+  for (const q of quants) {
+    if (q.bytesPerParam >= current.bytesPerParam) continue;
+    if (estimateMemory(model, q, contextLen).totalGB <= ramGB) return q;
+  }
+  return null;
+}
+
 export function estimateMemory(
   model: Model,
   quant: QuantLevel,
