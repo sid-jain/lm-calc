@@ -4,7 +4,6 @@ export const ModelSchema = z
   .object({
     id: z.string().regex(/^[a-z0-9-]+$/),
     displayName: z.string().min(1),
-    family: z.string().min(1),
     developer: z.string().min(1),
     hfRepo: z.string().regex(/^[^/]+\/[^/]+$/),
     params: z.number().positive(),
@@ -19,7 +18,7 @@ export const ModelSchema = z
       vocabSize: z.number().int().positive(),
       tiedEmbeddings: z.boolean(),
       maxContext: z.number().int().positive(),
-      attentionType: z.enum(['full', 'gqa', 'mqa', 'mixed', 'mla']),
+      attentionType: z.enum(['full', 'gqa', 'mqa', 'mixed', 'mla', 'hybrid-linear']),
       slidingWindowSize: z.number().int().positive().nullable(),
       fullAttentionRatio: z.number().min(0).max(1).nullable(),
       kvLoraRank: z.number().int().positive().nullable(),
@@ -32,6 +31,10 @@ export const ModelSchema = z
       m.arch.attentionType !== 'mixed' ||
       (m.arch.slidingWindowSize !== null && m.arch.fullAttentionRatio !== null),
     'mixed attention requires slidingWindowSize and fullAttentionRatio',
+  )
+  .refine(
+    (m) => m.arch.attentionType !== 'hybrid-linear' || m.arch.fullAttentionRatio !== null,
+    'hybrid-linear attention requires fullAttentionRatio',
   )
   .refine(
     (m) =>

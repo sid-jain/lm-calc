@@ -90,7 +90,7 @@ export function ModelRow({
             )}
           </div>
           <div className="truncate text-xs text-slate-500 dark:text-slate-400">
-            {model.developer} · {model.family}
+            {model.developer}
           </div>
         </div>
         <div className="shrink-0 text-right tabular-nums">

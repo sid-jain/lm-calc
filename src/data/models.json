@@ -1,8 +1,7 @@
 [
   {
-    "id": "qwen-2-5-0-5b",
-    "displayName": "Qwen 2.5 0.5B",
-    "family": "Qwen 2.5",
+    "id": "qwen2-5-0-5b",
+    "displayName": "Qwen2.5 0.5B",
     "developer": "Alibaba",
     "hfRepo": "Qwen/Qwen2.5-0.5B",
     "params": 0.494,
@@ -25,9 +24,8 @@
     }
   },
   {
-    "id": "qwen-3-0-6b",
-    "displayName": "Qwen 3 0.6B",
-    "family": "Qwen 3",
+    "id": "qwen3-0-6b",
+    "displayName": "Qwen3 0.6B",
     "developer": "Alibaba",
     "hfRepo": "Qwen/Qwen3-0.6B",
     "params": 0.752,
@@ -50,9 +48,8 @@
     }
   },
   {
-    "id": "gemma-3-1b",
-    "displayName": "Gemma 3 1B",
-    "family": "Gemma 3",
+    "id": "gemma-3-1b-pt",
+    "displayName": "Gemma 3 1b pt",
     "developer": "Google",
     "hfRepo": "google/gemma-3-1b-pt",
     "params": 1,
@@ -69,7 +66,7 @@
       "maxContext": 32768,
       "attentionType": "mixed",
       "slidingWindowSize": 512,
-      "fullAttentionRatio": 0.1667,
+      "fullAttentionRatio": 0.16666666666666666,
       "kvLoraRank": null,
       "qkRopeHeadDim": null
     }
@@ -77,7 +74,6 @@
   {
     "id": "llama-3-2-1b",
     "displayName": "Llama 3.2 1B",
-    "family": "Llama 3",
     "developer": "Meta",
     "hfRepo": "meta-llama/Llama-3.2-1B",
     "params": 1.236,
@@ -100,9 +96,8 @@
     }
   },
   {
-    "id": "qwen-3-1-7b",
-    "displayName": "Qwen 3 1.7B",
-    "family": "Qwen 3",
+    "id": "qwen3-1-7b",
+    "displayName": "Qwen3 1.7B",
     "developer": "Alibaba",
     "hfRepo": "Qwen/Qwen3-1.7B",
     "params": 2.032,
@@ -126,8 +121,7 @@
   },
   {
     "id": "gemma-2-2b",
-    "displayName": "Gemma 2 2B",
-    "family": "Gemma 2",
+    "displayName": "Gemma 2 2b",
     "developer": "Google",
     "hfRepo": "google/gemma-2-2b",
     "params": 2.614,
@@ -150,9 +144,8 @@
     }
   },
   {
-    "id": "qwen-2-5-3b",
-    "displayName": "Qwen 2.5 3B",
-    "family": "Qwen 2.5",
+    "id": "qwen2-5-3b",
+    "displayName": "Qwen2.5 3B",
     "developer": "Alibaba",
     "hfRepo": "Qwen/Qwen2.5-3B",
     "params": 3.086,
@@ -177,7 +170,6 @@
   {
     "id": "llama-3-2-3b",
     "displayName": "Llama 3.2 3B",
-    "family": "Llama 3",
     "developer": "Meta",
     "hfRepo": "meta-llama/Llama-3.2-3B",
     "params": 3.213,
@@ -200,9 +192,8 @@
     }
   },
   {
-    "id": "phi-3-5-mini",
-    "displayName": "Phi-3.5 mini",
-    "family": "Phi",
+    "id": "phi-3-5-mini-instruct",
+    "displayName": "Phi 3.5 mini instruct",
     "developer": "Microsoft",
     "hfRepo": "microsoft/Phi-3.5-mini-instruct",
     "params": 3.821,
@@ -225,9 +216,8 @@
     }
   },
   {
-    "id": "qwen-3-4b",
-    "displayName": "Qwen 3 4B",
-    "family": "Qwen 3",
+    "id": "qwen3-4b",
+    "displayName": "Qwen3 4B",
     "developer": "Alibaba",
     "hfRepo": "Qwen/Qwen3-4B",
     "params": 4.022,
@@ -250,9 +240,8 @@
     }
   },
   {
-    "id": "gemma-3-4b",
-    "displayName": "Gemma 3 4B",
-    "family": "Gemma 3",
+    "id": "gemma-3-4b-pt",
+    "displayName": "Gemma 3 4b pt",
     "developer": "Google",
     "hfRepo": "google/gemma-3-4b-pt",
     "params": 4.3,
@@ -269,15 +258,14 @@
       "maxContext": 131072,
       "attentionType": "mixed",
       "slidingWindowSize": 1024,
-      "fullAttentionRatio": 0.1667,
+      "fullAttentionRatio": 0.16666666666666666,
       "kvLoraRank": null,
       "qkRopeHeadDim": null
     }
   },
   {
-    "id": "mistral-7b",
-    "displayName": "Mistral 7B",
-    "family": "Mistral",
+    "id": "mistral-7b-v0-3",
+    "displayName": "Mistral 7B v0.3",
     "developer": "Mistral AI",
     "hfRepo": "mistralai/Mistral-7B-v0.3",
     "params": 7.248,
@@ -300,9 +288,8 @@
     }
   },
   {
-    "id": "qwen-2-5-7b",
-    "displayName": "Qwen 2.5 7B",
-    "family": "Qwen 2.5",
+    "id": "qwen2-5-7b",
+    "displayName": "Qwen2.5 7B",
     "developer": "Alibaba",
     "hfRepo": "Qwen/Qwen2.5-7B",
     "params": 7.616,
@@ -327,7 +314,6 @@
   {
     "id": "llama-3-1-8b",
     "displayName": "Llama 3.1 8B",
-    "family": "Llama 3",
     "developer": "Meta",
     "hfRepo": "meta-llama/Llama-3.1-8B",
     "params": 8.03,
@@ -352,7 +338,6 @@
   {
     "id": "deepseek-r1-distill-llama-8b",
     "displayName": "DeepSeek R1 Distill Llama 8B",
-    "family": "DeepSeek R1 Distill",
     "developer": "DeepSeek",
     "hfRepo": "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
     "params": 8.03,
@@ -375,9 +360,8 @@
     }
   },
   {
-    "id": "qwen-3-8b",
-    "displayName": "Qwen 3 8B",
-    "family": "Qwen 3",
+    "id": "qwen3-8b",
+    "displayName": "Qwen3 8B",
     "developer": "Alibaba",
     "hfRepo": "Qwen/Qwen3-8B",
     "params": 8.191,
@@ -401,11 +385,10 @@
   },
   {
     "id": "gemma-2-9b",
-    "displayName": "Gemma 2 9B",
-    "family": "Gemma 2",
+    "displayName": "Gemma 2 9b",
     "developer": "Google",
     "hfRepo": "google/gemma-2-9b",
-    "params": 9.241,
+    "params": 9.242,
     "isMoE": false,
     "activeParams": null,
     "arch": {
@@ -425,9 +408,8 @@
     }
   },
   {
-    "id": "gemma-3-12b",
-    "displayName": "Gemma 3 12B",
-    "family": "Gemma 3",
+    "id": "gemma-3-12b-pt",
+    "displayName": "Gemma 3 12b pt",
     "developer": "Google",
     "hfRepo": "google/gemma-3-12b-pt",
     "params": 12.187,
@@ -444,18 +426,17 @@
       "maxContext": 131072,
       "attentionType": "mixed",
       "slidingWindowSize": 1024,
-      "fullAttentionRatio": 0.1667,
+      "fullAttentionRatio": 0.16666666666666666,
       "kvLoraRank": null,
       "qkRopeHeadDim": null
     }
   },
   {
     "id": "phi-4",
-    "displayName": "Phi-4",
-    "family": "Phi",
+    "displayName": "Phi 4",
     "developer": "Microsoft",
     "hfRepo": "microsoft/phi-4",
-    "params": 14.659,
+    "params": 14.66,
     "isMoE": false,
     "activeParams": null,
     "arch": {
@@ -475,9 +456,8 @@
     }
   },
   {
-    "id": "qwen-3-14b",
-    "displayName": "Qwen 3 14B",
-    "family": "Qwen 3",
+    "id": "qwen3-14b",
+    "displayName": "Qwen3 14B",
     "developer": "Alibaba",
     "hfRepo": "Qwen/Qwen3-14B",
     "params": 14.768,
@@ -500,9 +480,8 @@
     }
   },
   {
-    "id": "qwen-2-5-14b",
-    "displayName": "Qwen 2.5 14B",
-    "family": "Qwen 2.5",
+    "id": "qwen2-5-14b",
+    "displayName": "Qwen2.5 14B",
     "developer": "Alibaba",
     "hfRepo": "Qwen/Qwen2.5-14B",
     "params": 14.77,
@@ -527,7 +506,6 @@
   {
     "id": "deepseek-r1-distill-qwen-14b",
     "displayName": "DeepSeek R1 Distill Qwen 14B",
-    "family": "DeepSeek R1 Distill",
     "developer": "DeepSeek",
     "hfRepo": "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B",
     "params": 14.77,
@@ -551,8 +529,7 @@
   },
   {
     "id": "moonlight-16b-a3b",
-    "displayName": "Moonlight 16B-A3B",
-    "family": "Kimi",
+    "displayName": "Moonlight 16B A3B",
     "developer": "Moonshot AI",
     "hfRepo": "moonshotai/Moonlight-16B-A3B",
     "params": 15.96,
@@ -575,9 +552,8 @@
     }
   },
   {
-    "id": "mistral-small-3-24b",
-    "displayName": "Mistral Small 3 24B",
-    "family": "Mistral",
+    "id": "mistral-small-24b-base-2501",
+    "displayName": "Mistral Small 24B Base 2501",
     "developer": "Mistral AI",
     "hfRepo": "mistralai/Mistral-Small-24B-Base-2501",
     "params": 23.572,
@@ -601,8 +577,7 @@
   },
   {
     "id": "gemma-2-27b",
-    "displayName": "Gemma 2 27B",
-    "family": "Gemma 2",
+    "displayName": "Gemma 2 27b",
     "developer": "Google",
     "hfRepo": "google/gemma-2-27b",
     "params": 27.227,
@@ -625,9 +600,8 @@
     }
   },
   {
-    "id": "gemma-3-27b",
-    "displayName": "Gemma 3 27B",
-    "family": "Gemma 3",
+    "id": "gemma-3-27b-pt",
+    "displayName": "Gemma 3 27b pt",
     "developer": "Google",
     "hfRepo": "google/gemma-3-27b-pt",
     "params": 27.432,
@@ -644,15 +618,38 @@
       "maxContext": 131072,
       "attentionType": "mixed",
       "slidingWindowSize": 1024,
-      "fullAttentionRatio": 0.1667,
+      "fullAttentionRatio": 0.16666666666666666,
       "kvLoraRank": null,
       "qkRopeHeadDim": null
     }
   },
   {
-    "id": "qwen-3-30b-a3b",
-    "displayName": "Qwen 3 30B-A3B",
-    "family": "Qwen 3",
+    "id": "qwen3-6-27b",
+    "displayName": "Qwen3.6 27B",
+    "developer": "Alibaba",
+    "hfRepo": "Qwen/Qwen3.6-27B",
+    "params": 27.781,
+    "isMoE": false,
+    "activeParams": null,
+    "arch": {
+      "layers": 64,
+      "attnHeads": 24,
+      "kvHeads": 4,
+      "headDim": 256,
+      "hiddenSize": 5120,
+      "vocabSize": 248320,
+      "tiedEmbeddings": false,
+      "maxContext": 262144,
+      "attentionType": "hybrid-linear",
+      "slidingWindowSize": null,
+      "fullAttentionRatio": 0.25,
+      "kvLoraRank": null,
+      "qkRopeHeadDim": null
+    }
+  },
+  {
+    "id": "qwen3-30b-a3b",
+    "displayName": "Qwen3 30B A3B",
     "developer": "Alibaba",
     "hfRepo": "Qwen/Qwen3-30B-A3B",
     "params": 30.532,
@@ -675,9 +672,8 @@
     }
   },
   {
-    "id": "qwen-3-32b",
-    "displayName": "Qwen 3 32B",
-    "family": "Qwen 3",
+    "id": "qwen3-32b",
+    "displayName": "Qwen3 32B",
     "developer": "Alibaba",
     "hfRepo": "Qwen/Qwen3-32B",
     "params": 32.762,
@@ -700,9 +696,8 @@
     }
   },
   {
-    "id": "qwen-2-5-32b",
-    "displayName": "Qwen 2.5 32B",
-    "family": "Qwen 2.5",
+    "id": "qwen2-5-32b",
+    "displayName": "Qwen2.5 32B",
     "developer": "Alibaba",
     "hfRepo": "Qwen/Qwen2.5-32B",
     "params": 32.764,
@@ -727,7 +722,6 @@
   {
     "id": "deepseek-r1-distill-qwen-32b",
     "displayName": "DeepSeek R1 Distill Qwen 32B",
-    "family": "DeepSeek R1 Distill",
     "developer": "DeepSeek",
     "hfRepo": "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
     "params": 32.764,
@@ -750,9 +744,8 @@
     }
   },
   {
-    "id": "mixtral-8x7b",
-    "displayName": "Mixtral 8x7B",
-    "family": "Mixtral",
+    "id": "mixtral-8x7b-v0-1",
+    "displayName": "Mixtral 8x7B v0.1",
     "developer": "Mistral AI",
     "hfRepo": "mistralai/Mixtral-8x7B-v0.1",
     "params": 46.703,
@@ -775,9 +768,8 @@
     }
   },
   {
-    "id": "llama-3-3-70b",
-    "displayName": "Llama 3.3 70B",
-    "family": "Llama 3",
+    "id": "llama-3-3-70b-instruct",
+    "displayName": "Llama 3.3 70B Instruct",
     "developer": "Meta",
     "hfRepo": "meta-llama/Llama-3.3-70B-Instruct",
     "params": 70.554,
@@ -802,7 +794,6 @@
   {
     "id": "deepseek-r1-distill-llama-70b",
     "displayName": "DeepSeek R1 Distill Llama 70B",
-    "family": "DeepSeek R1 Distill",
     "developer": "DeepSeek",
     "hfRepo": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
     "params": 70.554,
@@ -825,9 +816,8 @@
     }
   },
   {
-    "id": "qwen-2-5-72b",
-    "displayName": "Qwen 2.5 72B",
-    "family": "Qwen 2.5",
+    "id": "qwen2-5-72b",
+    "displayName": "Qwen2.5 72B",
     "developer": "Alibaba",
     "hfRepo": "Qwen/Qwen2.5-72B",
     "params": 72.706,
@@ -850,9 +840,8 @@
     }
   },
   {
-    "id": "llama-4-scout",
-    "displayName": "Llama 4 Scout 109B-A17B",
-    "family": "Llama 4",
+    "id": "llama-4-scout-17b-16e",
+    "displayName": "Llama 4 Scout 17B 16E",
     "developer": "Meta",
     "hfRepo": "meta-llama/Llama-4-Scout-17B-16E",
     "params": 108.642,
@@ -875,9 +864,8 @@
     }
   },
   {
-    "id": "mixtral-8x22b",
-    "displayName": "Mixtral 8x22B",
-    "family": "Mixtral",
+    "id": "mixtral-8x22b-v0-1",
+    "displayName": "Mixtral 8x22B v0.1",
     "developer": "Mistral AI",
     "hfRepo": "mistralai/Mixtral-8x22B-v0.1",
     "params": 140.621,
@@ -900,9 +888,8 @@
     }
   },
   {
-    "id": "qwen-3-235b-a22b",
-    "displayName": "Qwen 3 235B-A22B",
-    "family": "Qwen 3",
+    "id": "qwen3-235b-a22b",
+    "displayName": "Qwen3 235B A22B",
     "developer": "Alibaba",
     "hfRepo": "Qwen/Qwen3-235B-A22B",
     "params": 235.094,
@@ -925,9 +912,8 @@
     }
   },
   {
-    "id": "llama-4-maverick",
-    "displayName": "Llama 4 Maverick 400B-A17B",
-    "family": "Llama 4",
+    "id": "llama-4-maverick-17b-128e",
+    "displayName": "Llama 4 Maverick 17B 128E",
     "developer": "Meta",
     "hfRepo": "meta-llama/Llama-4-Maverick-17B-128E",
     "params": 401.584,
@@ -950,9 +936,8 @@
     }
   },
   {
-    "id": "kimi-k2",
-    "displayName": "Kimi K2 1T-A32B",
-    "family": "Kimi",
+    "id": "kimi-k2-instruct",
+    "displayName": "Kimi K2 Instruct",
     "developer": "Moonshot AI",
     "hfRepo": "moonshotai/Kimi-K2-Instruct",
     "params": 1026.471,

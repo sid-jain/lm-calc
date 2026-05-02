@@ -1,9 +1,8 @@
-export type AttentionType = 'full' | 'gqa' | 'mqa' | 'mixed' | 'mla';
+export type AttentionType = 'full' | 'gqa' | 'mqa' | 'mixed' | 'mla' | 'hybrid-linear';
 
 export interface Model {
   id: string;
   displayName: string;
-  family: string;
   developer: string;
   hfRepo: string;
   params: number;

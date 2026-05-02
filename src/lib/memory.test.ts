@@ -5,7 +5,6 @@ import type { Model } from './types';
 const LLAMA_3_1_8B: Model = {
   id: 'llama-3-1-8b',
   displayName: 'Llama 3.1 8B',
-  family: 'Llama 3',
   developer: 'Meta',
   hfRepo: 'meta-llama/Llama-3.1-8B',
   params: 8.03,
@@ -31,7 +30,6 @@ const LLAMA_3_1_8B: Model = {
 const GEMMA_2_9B: Model = {
   id: 'gemma-2-9b',
   displayName: 'Gemma 2 9B',
-  family: 'Gemma 2',
   developer: 'Google',
   hfRepo: 'google/gemma-2-9b',
   params: 9.241,
@@ -96,7 +94,6 @@ describe('kvCacheGB — mixed attention', () => {
 const KIMI_K2: Model = {
   id: 'kimi-k2',
   displayName: 'Kimi K2',
-  family: 'Kimi',
   developer: 'Moonshot AI',
   hfRepo: 'moonshotai/Kimi-K2-Instruct',
   params: 1026.5,
@@ -144,6 +141,50 @@ describe('kvCacheGB — MLA', () => {
   });
 });
 
+// Qwen 3.6 27B: 64 layers in a hybrid stack — every 4th layer is full GQA, the other
+// three are Gated DeltaNet (linear attention, ~constant-size recurrent state). 16 of 64
+// layers contribute to the standard KV cache.
+const QWEN_3_6_27B: Model = {
+  id: 'qwen-3-6-27b',
+  displayName: 'Qwen 3.6 27B',
+  developer: 'Alibaba',
+  hfRepo: 'Qwen/Qwen3.6-27B',
+  params: 27.8,
+  isMoE: false,
+  activeParams: null,
+  arch: {
+    layers: 64,
+    attnHeads: 24,
+    kvHeads: 4,
+    headDim: 256,
+    hiddenSize: 5120,
+    vocabSize: 248320,
+    tiedEmbeddings: false,
+    maxContext: 262144,
+    attentionType: 'hybrid-linear',
+    slidingWindowSize: null,
+    fullAttentionRatio: 0.25,
+    kvLoraRank: null,
+    qkRopeHeadDim: null,
+  },
+};
+
+describe('kvCacheGB — hybrid-linear', () => {
+  test('Qwen 3.6 27B at 8K ctx counts only the 16 full-attention layers', () => {
+    // 16 full layers × 2 (KV) × 4 kv_heads × 256 head_dim × 8192 ctx × 2 bytes / 1e9
+    //   = 16 × 33,554,432 / 1e9 = 0.536870912 GB
+    expect(kvCacheGB(QWEN_3_6_27B, 8192)).toBeCloseTo(0.536870912, 9);
+  });
+
+  test('hybrid-linear is 4× smaller than treating all layers as GQA', () => {
+    // The whole point of the new attention type — guards against regressing to
+    // counting all 64 layers if the dispatch ever breaks.
+    const hybrid = kvCacheGB(QWEN_3_6_27B, 8192);
+    const allLayers = (64 * 2 * 4 * 256 * 8192 * 2) / 1e9;
+    expect(allLayers / hybrid).toBeCloseTo(4, 6);
+  });
+});
+
 describe('estimateMemory', () => {
   test('total equals sum of components', () => {
     const e = estimateMemory(
@@ -167,7 +208,6 @@ describe('estimateMemory', () => {
 const MIXTRAL_8X7B: Model = {
   id: 'mixtral-8x7b',
   displayName: 'Mixtral 8x7B',
-  family: 'Mixtral',
   developer: 'Mistral AI',
   hfRepo: 'mistralai/Mixtral-8x7B-v0.1',
   params: 46.703,

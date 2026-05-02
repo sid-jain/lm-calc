@@ -41,6 +41,14 @@ export function kvCacheGB(model: Model, contextLen: number): number {
     return bytes / 1e9;
   }
 
+  // Linear-attention layers (Gated DeltaNet etc.) keep a constant-size recurrent state
+  // independent of context length — small enough to fold into framework_overhead. Only
+  // the full-attention layers contribute the standard KV cost.
+  if (attentionType === 'hybrid-linear') {
+    const fullLayers = Math.round(layers * (fullAttentionRatio ?? 0));
+    return (fullLayers * bytesPerLayerAt(ctx)) / 1e9;
+  }
+
   return (layers * bytesPerLayerAt(ctx)) / 1e9;
 }
 

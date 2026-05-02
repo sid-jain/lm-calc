@@ -23,7 +23,7 @@ total = weights + kv_cache + framework_overhead
 ```
 
 - **weights** = `params × bytes_per_param` (quantization byte averages from llama.cpp). For MoE models (Mixtral, Qwen 3 -A* variants) `params` is the **total** count — all experts must be in memory for inference.
-- **kv_cache** = `2 × kv_heads × head_dim × ctx × 2 bytes × layers` at FP16. For mixed-attention models (Gemma 2/3) the sliding layers use `ctx_sliding = min(ctx, sliding_window)`. KV cache is per-attention-layer regardless of MoE. **MLA** models (DeepSeek V3, Kimi K2, Moonlight) instead store a compressed latent + small rope cache: `(kv_lora_rank + qk_rope_head_dim) × 2 bytes × layers × ctx` — typically ~30× smaller than naive GQA at the same dimensions.
+- **kv_cache** = `2 × kv_heads × head_dim × ctx × 2 bytes × layers` at FP16. For mixed-attention models (Gemma 2/3) the sliding layers use `ctx_sliding = min(ctx, sliding_window)`. KV cache is per-attention-layer regardless of MoE. **MLA** models (DeepSeek V3, Kimi K2, Moonlight) instead store a compressed latent + small rope cache: `(kv_lora_rank + qk_rope_head_dim) × 2 bytes × layers × ctx` — typically ~30× smaller than naive GQA at the same dimensions. **Hybrid-linear** models (Qwen 3.6) interleave full GQA with linear-attention layers (Gated DeltaNet); only the full-attention layers contribute to the KV cache, the linear-attention layers' constant-size recurrent state is folded into framework_overhead.
 - **framework_overhead** = a flat 0.5 GB.
 
 The displayed memory range is the point estimate scaled by 0.95× (low) and 1.20× (high) to reflect framework / per-tensor variability.
@@ -38,7 +38,7 @@ tok/s ≈ memory_bandwidth ÷ (active_weight_bytes + kv_cache_bytes)
 
 For dense models, `active_weight_bytes = params × bytes_per_param`. For MoE, only the active experts are read per token, so `params` is replaced by the model's `activeParams`. The displayed range applies a 0.50–0.85× efficiency factor to the theoretical maximum to reflect real engine overhead. Prefill (prompt processing) is compute-bound and not modeled.
 
-All architecture data (`hidden_size`, `num_hidden_layers`, `num_attention_heads`, `num_key_value_heads`, `head_dim`, `vocab_size`, `max_position_embeddings`, `tie_word_embeddings`, `sliding_window`) comes directly from each model's `config.json` on HuggingFace. It is fetched by `scripts/fetch-models.ts`, validated against a zod schema, and written to `src/data/models.json`. Bad data fails the build, not the runtime.
+All architecture data (`hidden_size`, `num_hidden_layers`, `num_attention_heads`, `num_key_value_heads`, `head_dim`, `vocab_size`, `max_position_embeddings`, `tie_word_embeddings`, `sliding_window`) comes directly from each model's `config.json` on HuggingFace. The total parameter count comes from the HF API's safetensors metadata (or `model.safetensors.index.json` as a fallback). Both are fetched by `scripts/fetch-models.ts`, validated against a zod schema, and written to `src/data/models.json`. Bad data fails the build, not the runtime.
 
 ## Limitations
 
@@ -53,40 +53,43 @@ All architecture data (`hidden_size`, `num_hidden_layers`, `num_attention_heads`
 
 ## How to add a model
 
-1. Add an entry to [`scripts/model-sources.json`](scripts/model-sources.json):
+For most models, add an entry to [`scripts/model-sources.json`](scripts/model-sources.json) with just the HuggingFace repo:
 
-   ```json
-   {
-     "id": "my-new-model",
-     "displayName": "My New Model 7B",
-     "family": "MyFamily",
-     "developer": "MyCorp",
-     "hfRepo": "mycorp/my-new-model-7b",
-     "params": 7.0,
-     "attentionOverride": null,
-     "slidingWindowSize": null,
-     "fullAttentionRatio": null,
-     "isMoE": false,
-     "activeParams": null
-   }
-   ```
+```json
+{ "hfRepo": "Qwen/Qwen3.6-27B" }
+```
 
-   Set the override fields only when the architecture needs it:
-   - Mixed attention (Gemma 2/3): `attentionOverride: "mixed"`, `slidingWindowSize`, `fullAttentionRatio`.
-   - MoE (Mixtral, Qwen 3 -A*): `isMoE: true` and `activeParams` (in billions, the published per-token active count). Total `params` still drives the memory math.
+Then run `npm run fetch-models`. The script reads `config.json` (architecture), the safetensors metadata (exact parameter count), and a small owner→developer map to fill in everything else. The output lands in `src/data/models.json`. Run `npm test` to verify the math fixtures, then commit both files.
 
-2. Run `npm run fetch-models`. This pulls `config.json`, validates the schema, and rewrites `src/data/models.json`. If the schema fails it tells you exactly what's wrong.
+### Optional overrides
 
-3. Run `npm test` — verifies that the canonical math fixtures still match.
+Add any of these fields to the entry when auto-derivation can't cover the case:
 
-4. Commit both `model-sources.json` and the regenerated `models.json` and open a PR.
+```json
+{ "hfRepo": "Qwen/Qwen3-30B-A3B", "activeParams": 3.3 }
+```
+
+| Override | When you need it |
+|---|---|
+| `activeParams` | **Required for MoE.** Per-token active param count in billions. The script will refuse to proceed without it. |
+| `configRepo` | When `hfRepo` is gated. The script fetches `config.json` and safetensors metadata from this mirror instead. |
+| `developer` | When the HF org slug isn't in the built-in map. |
+| `attentionOverride` | Last-resort escape hatch when auto-detection picks the wrong attention type. |
+
+The displayed name is mechanically derived from the repo's tail (dashes → spaces, first letter capitalized). It is intentionally not curated — `Llama 3.3 70B Instruct` and `Gemma 3 27b pt` are what HuggingFace publishes, and that's what we show.
+
+### What the script auto-detects
+
+- **Attention type**: MLA (`kv_lora_rank` in config), hybrid-linear (`full_attention_interval`), Gemma-style mixed (`layer_types` / `sliding_window_pattern` / `model_type: gemma2`), and GQA/MQA/full from head counts. Phi-3.5's misleading `sliding_window` is correctly ignored.
+- **MoE**: presence of `num_experts` / `num_local_experts` / `n_routed_experts` in config.
+- **Parameter count**: HF API `safetensors.total` first; falls back to `model.safetensors.index.json` `metadata.total_size` divided by bytes-per-param from `torch_dtype`; final fallback is a HEAD on the single-shard `model.safetensors`.
 
 ### Gated repos
 
 Some official repos (Meta, Google) require auth. Two ways to handle them:
 
 - Set `HF_TOKEN=hf_...` (or `HUGGINGFACE_HUB_TOKEN`) before running `npm run fetch-models`.
-- Or set `"configRepo": "some-public/mirror"` in the source entry — the script will fetch the config from the mirror while keeping `hfRepo` pointing at the canonical source.
+- Or pass `"configRepo": "some-public/mirror"` in the object form — the script will fetch from the mirror while keeping `hfRepo` pointing at the canonical source.
 
 ## Local development
 

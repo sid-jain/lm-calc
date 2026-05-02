@@ -10,7 +10,6 @@ function makeRow(overrides: Partial<Model>): Row {
   const model: Model = {
     id: 'fixture',
     displayName: 'Fixture',
-    family: 'Test',
     developer: 'Acme',
     hfRepo: 'acme/fixture',
     params: 8,
