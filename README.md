@@ -84,6 +84,12 @@ The displayed name is mechanically derived from the repo's tail (dashes → spac
 - **MoE**: presence of `num_experts` / `num_local_experts` / `n_routed_experts` in config.
 - **Parameter count**: HF API `safetensors.total` first; falls back to `model.safetensors.index.json` `metadata.total_size` divided by bytes-per-param from `torch_dtype`; final fallback is a HEAD on the single-shard `model.safetensors`.
 
+### Discovering new releases
+
+Run `npm run discover-models` to list recent text-generation models from the tracked developers (Meta, Alibaba, Google, Mistral, Microsoft, DeepSeek, Moonshot AI) that aren't in `model-sources.json` yet. The output is a list with paste-ready JSON lines. Pass `--write` (i.e. `npm run discover-models -- --write`) to append every candidate directly to the file. Default lookback is 180 days; override with `SINCE_DAYS=N`. Quantized variants (`-GGUF`, `-AWQ`, `-FP8`, etc.) and training-step checkpoints (`-12000`) are filtered out.
+
+For MoE candidates, the script tries to fill `activeParams` automatically: first from the repo-name suffix (`-A3B`, `-A22B`), then by handing the model card README to Haiku 4.5 for extraction (requires `ANTHROPIC_API_KEY`). Anything it can't derive gets `"activeParams": 0` as a placeholder — `npm run fetch-models` rejects 0 with a pointed error, so no entry silently lands with the wrong number.
+
 ### Gated repos
 
 Some official repos (Meta, Google) require auth. Two ways to handle them:
@@ -99,6 +105,7 @@ npm run dev          # http://localhost:5173
 npm test             # run unit tests
 npm run build        # type-check + production bundle
 npm run fetch-models # regenerate src/data/models.json from HuggingFace
+npm run discover-models # list recent unlisted models from tracked developers
 ```
 
 ## License

@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "fetch-models": "tsx scripts/fetch-models.ts"
+    "fetch-models": "tsx scripts/fetch-models.ts",
+    "discover-models": "tsx scripts/discover-models.ts"
   },
   "dependencies": {
     "react": "^18.3.1",

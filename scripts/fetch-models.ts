@@ -253,10 +253,11 @@ async function buildModel(src: SourceEntry): Promise<Model> {
   const headDim = cfg.head_dim ?? Math.floor(hiddenSize / attnHeads);
 
   const isMoE = detectMoE(cfg);
-  if (isMoE && src.activeParams === undefined) {
+  if (isMoE && (src.activeParams === undefined || src.activeParams <= 0)) {
+    const placeholder = src.activeParams === 0 ? ' (currently set to the discover-models placeholder 0)' : '';
     throw new Error(
-      `${src.hfRepo}: detected MoE (config has expert count). Add "activeParams" to the source entry — ` +
-        `the per-token active parameter count from the model card, in billions.`,
+      `${src.hfRepo}: detected MoE (config has expert count). Set "activeParams"${placeholder} ` +
+        `to the per-token active parameter count from the model card, in billions.`,
     );
   }
 
