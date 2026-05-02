@@ -48,9 +48,8 @@ const SKIP_PATTERNS = [
 const PER_DEV_LIMIT = 40;
 
 // Skip models created before this date by default. Override via SINCE_DAYS env var.
-// Six months catches everything published this generation without dredging up old
-// experimental fine-tunes (ESFT, Prover, Coder V1, etc.) that aren't worth listing.
-const SINCE_DAYS = Number(process.env.SINCE_DAYS ?? 180);
+// 30 days is the run-it-monthly cadence; bump SINCE_DAYS=180 for a half-year sweep.
+const SINCE_DAYS = Number(process.env.SINCE_DAYS ?? 30);
 const SINCE_CUTOFF = new Date(Date.now() - SINCE_DAYS * 24 * 60 * 60 * 1000);
 
 interface HfModel {
