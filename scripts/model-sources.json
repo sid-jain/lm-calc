@@ -1,4 +1,22 @@
 [
+  { "hfRepo": "deepseek-ai/DeepSeek-R1-Distill-Llama-8B" },
+  { "hfRepo": "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B" },
+  { "hfRepo": "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B" },
+  { "hfRepo": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B" },
+  { "hfRepo": "deepseek-ai/DeepSeek-V4-Pro", "activeParams": 49 },
+  { "hfRepo": "deepseek-ai/DeepSeek-V4-Flash", "activeParams": 13 },
+  { "hfRepo": "deepseek-ai/DeepSeek-V3.2", "activeParams": 37 },
+  { "hfRepo": "deepseek-ai/DeepSeek-V3.2-Speciale", "activeParams": 37 },
+  { "hfRepo": "deepseek-ai/DeepSeek-Math-V2", "activeParams": 37 },
+
+  { "hfRepo": "google/gemma-2-2b", "configRepo": "unsloth/gemma-2-2b" },
+  { "hfRepo": "google/gemma-2-9b", "configRepo": "unsloth/gemma-2-9b" },
+  { "hfRepo": "google/gemma-2-27b", "configRepo": "unsloth/gemma-2-27b" },
+  { "hfRepo": "google/gemma-3-1b-pt", "configRepo": "unsloth/gemma-3-1b-pt" },
+  { "hfRepo": "google/gemma-3-4b-pt", "configRepo": "unsloth/gemma-3-4b-pt" },
+  { "hfRepo": "google/gemma-3-12b-pt", "configRepo": "unsloth/gemma-3-12b-pt" },
+  { "hfRepo": "google/gemma-3-27b-pt", "configRepo": "unsloth/gemma-3-27b-pt" },
+
   { "hfRepo": "meta-llama/Llama-3.2-1B", "configRepo": "unsloth/Llama-3.2-1B" },
   { "hfRepo": "meta-llama/Llama-3.2-3B", "configRepo": "unsloth/Llama-3.2-3B" },
   { "hfRepo": "meta-llama/Llama-3.1-8B", "configRepo": "unsloth/Meta-Llama-3.1-8B" },
@@ -13,17 +31,19 @@
     "configRepo": "unsloth/Llama-4-Maverick-17B-128E",
     "activeParams": 17.0
   },
-  { "hfRepo": "mistralai/Mistral-7B-v0.3" },
-  { "hfRepo": "mistralai/Mistral-Small-24B-Base-2501" },
+
   { "hfRepo": "microsoft/Phi-3.5-mini-instruct" },
   { "hfRepo": "microsoft/phi-4" },
-  { "hfRepo": "google/gemma-2-2b", "configRepo": "unsloth/gemma-2-2b" },
-  { "hfRepo": "google/gemma-2-9b", "configRepo": "unsloth/gemma-2-9b" },
-  { "hfRepo": "google/gemma-2-27b", "configRepo": "unsloth/gemma-2-27b" },
-  { "hfRepo": "google/gemma-3-1b-pt", "configRepo": "unsloth/gemma-3-1b-pt" },
-  { "hfRepo": "google/gemma-3-4b-pt", "configRepo": "unsloth/gemma-3-4b-pt" },
-  { "hfRepo": "google/gemma-3-12b-pt", "configRepo": "unsloth/gemma-3-12b-pt" },
-  { "hfRepo": "google/gemma-3-27b-pt", "configRepo": "unsloth/gemma-3-27b-pt" },
+
+  { "hfRepo": "mistralai/Mistral-7B-v0.3" },
+  { "hfRepo": "mistralai/Mistral-Small-24B-Base-2501" },
+  { "hfRepo": "mistralai/Mixtral-8x7B-v0.1", "activeParams": 12.88 },
+  { "hfRepo": "mistralai/Mixtral-8x22B-v0.1", "activeParams": 39.0 },
+
+  { "hfRepo": "moonshotai/Kimi-K2-Thinking", "activeParams": 32 },
+  { "hfRepo": "moonshotai/Kimi-K2-Instruct", "activeParams": 32.0 },
+  { "hfRepo": "moonshotai/Moonlight-16B-A3B", "activeParams": 3.0 },
+
   { "hfRepo": "Qwen/Qwen2.5-0.5B" },
   { "hfRepo": "Qwen/Qwen2.5-3B" },
   { "hfRepo": "Qwen/Qwen2.5-7B" },
@@ -38,13 +58,9 @@
   { "hfRepo": "Qwen/Qwen3-32B" },
   { "hfRepo": "Qwen/Qwen3-30B-A3B", "activeParams": 3.3 },
   { "hfRepo": "Qwen/Qwen3-235B-A22B", "activeParams": 22.0 },
-  { "hfRepo": "Qwen/Qwen3.6-27B" },
-  { "hfRepo": "mistralai/Mixtral-8x7B-v0.1", "activeParams": 12.88 },
-  { "hfRepo": "mistralai/Mixtral-8x22B-v0.1", "activeParams": 39.0 },
-  { "hfRepo": "moonshotai/Moonlight-16B-A3B", "activeParams": 3.0 },
-  { "hfRepo": "moonshotai/Kimi-K2-Instruct", "activeParams": 32.0 },
-  { "hfRepo": "deepseek-ai/DeepSeek-R1-Distill-Llama-8B" },
-  { "hfRepo": "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B" },
-  { "hfRepo": "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B" },
-  { "hfRepo": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B" }
+  { "hfRepo": "Qwen/Qwen3-Coder-Next-Base", "activeParams": 3 },
+  { "hfRepo": "Qwen/Qwen3-Coder-Next", "activeParams": 3 },
+  { "hfRepo": "Qwen/Qwen3.6-27B" }
+
+
 ]
