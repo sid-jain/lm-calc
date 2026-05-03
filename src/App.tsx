@@ -1,57 +1,43 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer } from 'react';
 import { Controls } from './components/Controls';
-import { ModelList } from './components/ModelList';
-import { DEVICES } from './lib/devices';
+import { Recommender } from './components/Recommender';
+import { INITIAL_STATE, reducer } from './lib/appState';
+import { DEFAULT_QUANT_ID } from './lib/config';
+import { DEVICES, CUSTOM_DEVICE_ID } from './lib/devices';
 import { models } from './lib/loadModels';
-import { QUANT_LEVELS } from './lib/quants';
-import { readParams, writeParams } from './lib/urlState';
+import { AUTO_QUANT, AUTO_QUANT_ID, QUANT_LEVELS } from './lib/quants';
+import { deserialize, readUrlParams, writeUrlParams } from './lib/urlSync';
 import { useTheme } from './lib/useTheme';
 
-const DEFAULT_RAM = 16;
-const DEFAULT_CTX = 8192;
-const DEFAULT_QUANT_ID = 'q4_k_m';
-const DEFAULT_DEVICE_ID = 'apple-m3-pro';
-const DEFAULT_BW = 150;
+function init(state: typeof INITIAL_STATE) {
+  const params = readUrlParams();
+  const partial = deserialize(params);
+  return {
+    ...state,
+    ...partial,
+    profile: { ...state.profile, ...partial.profile },
+    recommend: { ...state.recommend, ...partial.recommend },
+  };
+}
 
 export function App(): JSX.Element {
-  const [ramGB, setRamGB] = useState(DEFAULT_RAM);
-  const [contextLen, setContextLen] = useState(DEFAULT_CTX);
-  const [quant, setQuant] = useState(QUANT_LEVELS.find((q) => q.id === DEFAULT_QUANT_ID)!);
-  const [device, setDevice] = useState(DEVICES.find((d) => d.id === DEFAULT_DEVICE_ID)!);
-  const [customBandwidthGBps, setCustomBandwidthGBps] = useState(DEFAULT_BW);
+  const [state, dispatch] = useReducer(reducer, INITIAL_STATE, init);
   const { theme, toggle } = useTheme();
 
-  // Hydrate from the URL after mount. The prerender runs in Node, so we render defaults
-  // server-side and then snap to the URL-derived state once we hit the browser.
-  useEffect(() => {
-    const params = readParams();
-    const ram = Number(params.get('ram'));
-    if (Number.isFinite(ram) && ram > 0) setRamGB(ram);
-    const ctx = Number(params.get('ctx'));
-    if (Number.isFinite(ctx) && ctx > 0) setContextLen(ctx);
-    const q = QUANT_LEVELS.find((x) => x.id === params.get('quant'));
-    if (q) setQuant(q);
-    const d = DEVICES.find((x) => x.id === params.get('device'));
-    if (d) setDevice(d);
-    const bw = Number(params.get('bw'));
-    if (Number.isFinite(bw) && bw > 0) setCustomBandwidthGBps(bw);
-  }, []);
+  const { profile, recommend } = state;
+
+  const isAutoQuant = profile.quantId === AUTO_QUANT_ID;
+  const resolvedQuant =
+    QUANT_LEVELS.find((q) => q.id === (isAutoQuant ? DEFAULT_QUANT_ID : profile.quantId)) ??
+    QUANT_LEVELS[5];
+  const device = DEVICES.find((d) => d.id === profile.deviceId) ?? DEVICES[4];
+  const bandwidthGBps =
+    profile.deviceId === CUSTOM_DEVICE_ID ? profile.customBandwidthGBps : device.bandwidthGBps;
 
   useEffect(() => {
-    // Always write every key in scope so any populated URL is self-contained and
-    // bookmark-stable across future default changes. Cold-visit URLs get auto-populated
-    // on mount with the current defaults; if those defaults later change, existing
-    // bookmarks still resolve to the values they captured.
-    writeParams({
-      ram: String(ramGB),
-      ctx: String(contextLen),
-      quant: quant.id,
-      device: device.id,
-      // bw is only meaningful when the device is "custom"; otherwise omit so flipping
-      // device doesn't leave a stale bw value pinned in the URL.
-      bw: device.id === 'custom' ? String(customBandwidthGBps) : null,
-    });
-  }, [ramGB, contextLen, quant, device, customBandwidthGBps]);
+    const id = requestAnimationFrame(() => writeUrlParams(state));
+    return () => cancelAnimationFrame(id);
+  }, [state]);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">
@@ -90,33 +76,43 @@ export function App(): JSX.Element {
       </header>
 
       <p className="mb-6 text-sm text-slate-600 dark:text-slate-400">
-        Pick a RAM (or VRAM) budget, context length, and quantization. The list below shows which
-        open-weight LLMs (Llama, Qwen, Gemma, Mistral, Phi, DeepSeek) actually fit, with weights /
-        KV cache / overhead breakdowns derived from each model's HuggingFace{' '}
-        <code className="rounded bg-slate-100 px-1 py-0.5 text-xs dark:bg-slate-800">config.json</code>.
+        Set your hardware constraints and get a ranked list of open-weight LLMs — each shown at the
+        highest-quality quant that fits your RAM and meets your speed floor. Models that don't fit
+        are listed below with the reason.
       </p>
 
       <main>
         <Controls
-          ramGB={ramGB}
-          contextLen={contextLen}
-          quant={quant}
+          ramGB={profile.ramGB}
+          contextLen={profile.contextLen}
+          quant={isAutoQuant ? AUTO_QUANT : resolvedQuant}
           device={device}
-          customBandwidthGBps={customBandwidthGBps}
-          onRamGB={setRamGB}
-          onContextLen={setContextLen}
-          onQuant={setQuant}
-          onDevice={setDevice}
-          onCustomBandwidth={setCustomBandwidthGBps}
+          customBandwidthGBps={profile.customBandwidthGBps}
+          minTps={recommend.minTps}
+          onRamGB={(v) => dispatch({ type: 'SET_RAM', ramGB: v })}
+          onContextLen={(v) => dispatch({ type: 'SET_CONTEXT', contextLen: v })}
+          onQuant={(q) => dispatch({ type: 'SET_QUANT', quantId: q.id })}
+          onDevice={(d) => {
+            dispatch({ type: 'SET_DEVICE', deviceId: d.id });
+            if (d.id === CUSTOM_DEVICE_ID) {
+              dispatch({ type: 'SET_CUSTOM_BANDWIDTH', bw: d.bandwidthGBps });
+            }
+          }}
+          onCustomBandwidth={(v) => dispatch({ type: 'SET_CUSTOM_BANDWIDTH', bw: v })}
+          onMinTps={(v) => dispatch({ type: 'SET_MIN_TPS', minTps: v })}
         />
 
         <div className="mt-6">
-          <ModelList
+          <Recommender
             models={models}
-            quant={quant}
-            contextLen={contextLen}
-            ramGB={ramGB}
-            bandwidthGBps={device.bandwidthGBps}
+            ramGB={profile.ramGB}
+            contextLen={profile.contextLen}
+            bandwidthGBps={bandwidthGBps}
+            lockQuantId={isAutoQuant ? null : profile.quantId}
+            minTps={recommend.minTps}
+            excludedDevs={recommend.excludedDevs}
+            onToggleDev={(dev) => dispatch({ type: 'TOGGLE_RECOMMEND_DEV', dev })}
+            onClearDevs={() => dispatch({ type: 'CLEAR_RECOMMEND_DEVS' })}
           />
         </div>
       </main>

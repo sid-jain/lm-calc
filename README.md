@@ -1,18 +1,43 @@
 # LLM RAM and Speed Calculator
 
-A static web tool that takes available RAM, context length, quantization, and target hardware, and lists which open-weight LLMs fit and roughly how fast they decode (tokens per second). No backend, no accounts.
+A static web tool that answers: *"given my hardware, which open-weight LLMs can I actually run — and which quant should I use?"* Set your RAM budget, context length, minimum decode speed, and device; get back a ranked list of models, each at the highest-quality quantization that fits your constraints. No backend, no accounts.
 
 ## Live demo
 
 <https://lmcalc.app>
 
-## What it shows
+## What it does
 
-For each model, given your inputs:
+### Constraints (inputs)
 
-- **Total memory estimate** (weights + KV cache + framework overhead) as a range, with a fit / tight / over-RAM bucket.
-- **Decode tok/s estimate** for the chosen device's memory bandwidth, as a range.
-- **Architecture detail** (params, layers, attention type, max context) on click.
+| Control | What it sets |
+|---|---|
+| **Available RAM** | VRAM or unified-memory budget in GB |
+| **Context length** | Required token context; models that don't support it are filtered out |
+| **Min speed** | Minimum acceptable decode rate (tok/s); models that can't reach it are filtered out |
+| **Quantization** | *Recommend best quant* (default) lets the engine pick; selecting a specific quant locks every result to that quant |
+| **Device** | Sets memory bandwidth used for speed estimation; pick from common Apple, Nvidia, and DDR presets or enter a custom GB/s value |
+| **Developers** | Pill filter to include or exclude specific model families |
+
+### Results (outputs)
+
+**Matched models** — ranked by a composite score that prefers higher quant quality, then higher speed, then larger parameter count. Each row shows:
+
+- Recommended quant badge (the highest-quality quant that satisfies all constraints)
+- Memory range (weights + KV cache + overhead, ×0.95 – ×1.20 of point estimate)
+- Decode speed range (×0.50 – ×0.85 of theoretical maximum)
+- Click to expand: full memory breakdown, architectural details, HuggingFace link
+
+**Filtered-out models** — collapsible section below the matches. Each filtered model shows all reasons that apply, colour-coded:
+
+| Colour | Reason | Meaning |
+|---|---|---|
+| Rose | Needs ≥X GB | Even the lowest-quality quant exceeds your RAM budget |
+| Amber | Max Y tok/s | Fits in RAM (or would, if budget were larger) but can't reach min speed |
+| Sky | Max ZK ctx | Model's maximum context is below your required context length |
+| Slate | Dev excluded | Filtered out by your developer selection |
+
+RAM and speed failures are computed independently: a model can show both if it's too large *and* too slow on your bandwidth.
 
 ## Methodology
 

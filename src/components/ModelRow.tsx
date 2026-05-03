@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { formatContext } from '../lib/contextSnaps';
+import { FIT_STYLES, fitStatus } from '../lib/fitStyle';
 import { decodeTokensPerSecond, largestFittingQuant } from '../lib/memory';
 import { QUANT_LEVELS } from '../lib/quants';
 import { SPEED_STYLES, speedTier } from '../lib/speedTier';
 import type { MemoryEstimate, Model, QuantLevel } from '../lib/types';
-import { formatContext } from '../lib/contextSnaps';
 
 interface Props {
   model: Model;
@@ -12,21 +13,8 @@ interface Props {
   ramGB: number;
   bandwidthGBps: number;
   estimate: MemoryEstimate;
+  quantLabel?: string;
 }
-
-type FitStatus = 'fits' | 'tight' | 'over';
-
-function fitStatus(totalGB: number, ramGB: number): FitStatus {
-  if (totalGB <= ramGB * 0.9) return 'fits';
-  if (totalGB <= ramGB) return 'tight';
-  return 'over';
-}
-
-const FIT_STYLES: Record<FitStatus, { tone: string; icon: string; label: string }> = {
-  fits: { tone: 'text-emerald-600 dark:text-emerald-400', icon: '✓', label: 'Fits' },
-  tight: { tone: 'text-amber-600 dark:text-amber-400', icon: '⚠', label: 'Tight' },
-  over: { tone: 'text-rose-600 dark:text-rose-400', icon: '✗', label: "Doesn't fit" },
-};
 
 function fmtGB(n: number): string {
   if (n >= 100) return n.toFixed(0);
@@ -54,6 +42,7 @@ export function ModelRow({
   ramGB,
   bandwidthGBps,
   estimate,
+  quantLabel,
 }: Props): JSX.Element {
   const [open, setOpen] = useState(false);
   const status = fitStatus(estimate.totalGB, ramGB);
@@ -76,6 +65,11 @@ export function ModelRow({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span className="truncate text-sm font-medium">{model.displayName}</span>
+            {quantLabel && (
+              <span className="shrink-0 rounded border border-slate-300 bg-slate-50 px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                {quantLabel}
+              </span>
+            )}
             {model.isMoE && (
               <span
                 title={`Mixture of Experts: ~${model.activeParams}B active per token, all ${model.params}B loaded into memory`}

@@ -1,5 +1,14 @@
 import type { QuantLevel } from './types';
 
+export const AUTO_QUANT_ID = 'auto';
+
+export const AUTO_QUANT: QuantLevel = {
+  id: AUTO_QUANT_ID,
+  name: 'Recommend best quant',
+  bytesPerParam: 0,
+  description: 'Recommender picks the highest-quality quant that fits in RAM',
+};
+
 export const QUANT_LEVELS: QuantLevel[] = [
   { id: 'fp32', name: 'FP32', bytesPerParam: 4.0, description: 'Full precision (training)' },
   {
