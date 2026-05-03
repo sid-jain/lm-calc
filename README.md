@@ -41,40 +41,7 @@ RAM and speed failures are computed independently: a model can show both if it's
 
 ## Methodology
 
-Total memory is the sum of three terms:
-
-```
-total = weights + kv_cache + framework_overhead
-```
-
-- **weights** = `params × bytes_per_param` (quantization byte averages from llama.cpp). For MoE models (Mixtral, Qwen 3 -A* variants) `params` is the **total** count — all experts must be in memory for inference.
-- **kv_cache** = `2 × kv_heads × head_dim × ctx × 2 bytes × layers` at FP16. For mixed-attention models (Gemma 2/3) the sliding layers use `ctx_sliding = min(ctx, sliding_window)`. KV cache is per-attention-layer regardless of MoE. **MLA** models (DeepSeek V3, Kimi K2, Moonlight) instead store a compressed latent + small rope cache: `(kv_lora_rank + qk_rope_head_dim) × 2 bytes × layers × ctx` — typically ~30× smaller than naive GQA at the same dimensions. **Hybrid-linear** models (Qwen 3.6) interleave full GQA with linear-attention layers (Gated DeltaNet); only the full-attention layers contribute to the KV cache, the linear-attention layers' constant-size recurrent state is folded into framework_overhead.
-- **framework_overhead** = a flat 0.5 GB.
-
-The displayed memory range is the point estimate scaled by 0.95× (low) and 1.20× (high) to reflect framework / per-tensor variability.
-
-### Decode speed
-
-Single-batch token generation is bandwidth-bound:
-
-```
-tok/s ≈ memory_bandwidth ÷ (active_weight_bytes + kv_cache_bytes)
-```
-
-For dense models, `active_weight_bytes = params × bytes_per_param`. For MoE, only the active experts are read per token, so `params` is replaced by the model's `activeParams`. The displayed range applies a 0.50–0.85× efficiency factor to the theoretical maximum to reflect real engine overhead. Prefill (prompt processing) is compute-bound and not modeled.
-
-All architecture data (`hidden_size`, `num_hidden_layers`, `num_attention_heads`, `num_key_value_heads`, `head_dim`, `vocab_size`, `max_position_embeddings`, `tie_word_embeddings`, `sliding_window`) comes directly from each model's `config.json` on HuggingFace. The total parameter count comes from the HF API's safetensors metadata (or `model.safetensors.index.json` as a fallback). Both are fetched by `scripts/fetch-models.ts`, validated against a zod schema, and written to `src/data/models.json`. Bad data fails the build, not the runtime.
-
-## Limitations
-
-- **Single-batch inference** is assumed.
-- **Framework overhead** is approximated as a flat 0.5 GB. Real overhead depends heavily on engine (llama.cpp vs vLLM vs transformers).
-- **Quant byte averages** are llama.cpp published BPW values divided by 8. Real GGUF sizes vary slightly per model because K-quants apply different bit widths to different tensors.
-- **Prefill speed** (compute-bound, depends on FLOPS) isn't modeled. The displayed tok/s is decode-only.
-- **MoE routing overhead** in real systems often re-reads experts due to routing variance. The 0.50× low end of the speed range captures this; the high end is closer to dense behavior.
-- **Per-engine differences** (llama.cpp vs vLLM vs MLX vs Transformers) are folded into the single 0.50–0.85× efficiency band.
-- **No multi-GPU sharding** — totals assume the model lives in one place.
-- **No activation memory** — negligible for inference at batch size 1, but real for larger batches / training.
+See [METHODOLOGY.md](METHODOLOGY.md). It is also rendered directly in the app (click **Methodology** in the header).
 
 ## How to add a model
 

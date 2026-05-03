@@ -1,5 +1,6 @@
-import { useEffect, useReducer } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import { Controls } from './components/Controls';
+import { Methodology } from './components/Methodology';
 import { Recommender } from './components/Recommender';
 import { INITIAL_STATE, reducer } from './lib/appState';
 import { DEFAULT_QUANT_ID } from './lib/config';
@@ -22,7 +23,16 @@ function init(state: typeof INITIAL_STATE) {
 
 export function App(): JSX.Element {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE, init);
+  const [showMethodology, setShowMethodology] = useState(
+    () => typeof window !== 'undefined' && window.location.hash === '#methodology',
+  );
   const { theme, toggle } = useTheme();
+
+  useEffect(() => {
+    const onPop = () => setShowMethodology(window.location.hash === '#methodology');
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   const { profile, recommend } = state;
 
@@ -52,9 +62,22 @@ export function App(): JSX.Element {
           </span>
         </div>
         <nav className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
-          <a href="#methodology" className="hover:text-slate-900 dark:hover:text-slate-100">
+          <button
+            type="button"
+            onClick={() => {
+              if (showMethodology) {
+                history.back();
+              } else {
+                history.pushState(null, '', '#methodology');
+                setShowMethodology(true);
+              }
+            }}
+            className={showMethodology
+              ? 'font-medium text-slate-900 dark:text-slate-100'
+              : 'hover:text-slate-900 dark:hover:text-slate-100'}
+          >
             Methodology
-          </a>
+          </button>
           <a
             href="https://github.com"
             target="_blank"
@@ -75,91 +98,53 @@ export function App(): JSX.Element {
         </nav>
       </header>
 
-      <p className="mb-6 text-sm text-slate-600 dark:text-slate-400">
-        Set your hardware constraints and get a ranked list of open-weight LLMs — each shown at the
-        highest-quality quant that fits your RAM and meets your speed floor. Models that don't fit
-        are listed below with the reason.
-      </p>
+      {showMethodology ? (
+        <Methodology />
+      ) : (
+        <>
+          <p className="mb-6 text-sm text-slate-600 dark:text-slate-400">
+            Set your hardware constraints and get a ranked list of open-weight LLMs — each shown at
+            the highest-quality quant that fits your RAM and meets your speed floor. Models that
+            don't fit are listed below with the reason.
+          </p>
 
-      <main>
-        <Controls
-          ramGB={profile.ramGB}
-          contextLen={profile.contextLen}
-          quant={isAutoQuant ? AUTO_QUANT : resolvedQuant}
-          device={device}
-          customBandwidthGBps={profile.customBandwidthGBps}
-          minTps={recommend.minTps}
-          onRamGB={(v) => dispatch({ type: 'SET_RAM', ramGB: v })}
-          onContextLen={(v) => dispatch({ type: 'SET_CONTEXT', contextLen: v })}
-          onQuant={(q) => dispatch({ type: 'SET_QUANT', quantId: q.id })}
-          onDevice={(d) => {
-            dispatch({ type: 'SET_DEVICE', deviceId: d.id });
-            if (d.id === CUSTOM_DEVICE_ID) {
-              dispatch({ type: 'SET_CUSTOM_BANDWIDTH', bw: d.bandwidthGBps });
-            }
-          }}
-          onCustomBandwidth={(v) => dispatch({ type: 'SET_CUSTOM_BANDWIDTH', bw: v })}
-          onMinTps={(v) => dispatch({ type: 'SET_MIN_TPS', minTps: v })}
-        />
+          <main>
+            <Controls
+              ramGB={profile.ramGB}
+              contextLen={profile.contextLen}
+              quant={isAutoQuant ? AUTO_QUANT : resolvedQuant}
+              device={device}
+              customBandwidthGBps={profile.customBandwidthGBps}
+              minTps={recommend.minTps}
+              onRamGB={(v) => dispatch({ type: 'SET_RAM', ramGB: v })}
+              onContextLen={(v) => dispatch({ type: 'SET_CONTEXT', contextLen: v })}
+              onQuant={(q) => dispatch({ type: 'SET_QUANT', quantId: q.id })}
+              onDevice={(d) => {
+                dispatch({ type: 'SET_DEVICE', deviceId: d.id });
+                if (d.id === CUSTOM_DEVICE_ID) {
+                  dispatch({ type: 'SET_CUSTOM_BANDWIDTH', bw: d.bandwidthGBps });
+                }
+              }}
+              onCustomBandwidth={(v) => dispatch({ type: 'SET_CUSTOM_BANDWIDTH', bw: v })}
+              onMinTps={(v) => dispatch({ type: 'SET_MIN_TPS', minTps: v })}
+            />
 
-        <div className="mt-6">
-          <Recommender
-            models={models}
-            ramGB={profile.ramGB}
-            contextLen={profile.contextLen}
-            bandwidthGBps={bandwidthGBps}
-            lockQuantId={isAutoQuant ? null : profile.quantId}
-            minTps={recommend.minTps}
-            excludedDevs={recommend.excludedDevs}
-            onToggleDev={(dev) => dispatch({ type: 'TOGGLE_RECOMMEND_DEV', dev })}
-            onClearDevs={() => dispatch({ type: 'CLEAR_RECOMMEND_DEVS' })}
-          />
-        </div>
-      </main>
-
-      <footer
-        id="methodology"
-        className="mt-10 border-t border-slate-200 pt-6 text-sm text-slate-600 dark:border-slate-800 dark:text-slate-400"
-      >
-        <h2 className="mb-2 text-base font-semibold text-slate-900 dark:text-slate-100">
-          Methodology
-        </h2>
-        <p className="mb-2">
-          Total memory ≈ <em>weights</em> + <em>KV cache</em> + <em>0.5 GB framework overhead</em>.
-          The displayed range applies a 0.95×–1.20× factor to the point estimate.
-        </p>
-        <ul className="list-disc space-y-1 pl-5">
-          <li>
-            <strong>Weights</strong>: <code>params × bytesPerParam</code>. Quant byte averages come
-            from llama.cpp; real GGUF sizes vary slightly per tensor.
-          </li>
-          <li>
-            <strong>KV cache</strong>:{' '}
-            <code>2 × kvHeads × headDim × ctx × 2 bytes × layers</code> at FP16. Mixed-attention
-            models (Gemma 2/3) use the sliding window for sliding layers.{' '}
-            <strong>MLA</strong> models (DeepSeek V3, Kimi K2, Moonlight) instead store a
-            compressed latent and a small rope cache:{' '}
-            <code>(kv_lora_rank + qk_rope_head_dim) × 2 bytes × layers × ctx</code>, ~30× smaller
-            than naive GQA.
-          </li>
-          <li>
-            <strong>MoE</strong> (Mixtral, Qwen 3 -A* variants): all experts must be loaded into
-            memory, so weights use <em>total</em> params. Decode speed uses <em>active</em>
-            params per token.
-          </li>
-          <li>
-            <strong>Decode speed</strong>: single-batch token generation is bandwidth-bound.{' '}
-            <code>tok/s ≈ bandwidth ÷ (active_weight_bytes + kv_bytes)</code>. The displayed range
-            applies a 0.50–0.85× efficiency factor on top of the theoretical maximum to reflect
-            real engine overhead. Prefill (prompt processing) is compute-bound and not modeled.
-          </li>
-          <li>Single-batch inference assumed. No multi-GPU sharding.</li>
-          <li>
-            Architecture data is fetched from each model's <code>config.json</code> on HuggingFace
-            and validated by zod at build time.
-          </li>
-        </ul>
-      </footer>
+            <div className="mt-6">
+              <Recommender
+                models={models}
+                ramGB={profile.ramGB}
+                contextLen={profile.contextLen}
+                bandwidthGBps={bandwidthGBps}
+                lockQuantId={isAutoQuant ? null : profile.quantId}
+                minTps={recommend.minTps}
+                excludedDevs={recommend.excludedDevs}
+                onToggleDev={(dev) => dispatch({ type: 'TOGGLE_RECOMMEND_DEV', dev })}
+                onClearDevs={() => dispatch({ type: 'CLEAR_RECOMMEND_DEVS' })}
+              />
+            </div>
+          </main>
+        </>
+      )}
     </div>
   );
 }
