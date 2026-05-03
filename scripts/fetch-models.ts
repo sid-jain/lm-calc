@@ -330,7 +330,9 @@ async function main() {
     process.exit(1);
   }
 
-  models.sort((a, b) => a.params - b.params);
+  // Output preserves the order of entries in model-sources.json. The source file is
+  // grouped by developer with blank-line separators; we don't impose a different sort
+  // here since the UI re-sorts at render time per the user's chosen sort key.
 
   const parsed = ModelsSchema.safeParse(models);
   if (!parsed.success) {
