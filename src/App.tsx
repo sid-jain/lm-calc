@@ -1,18 +1,57 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Controls } from './components/Controls';
 import { ModelList } from './components/ModelList';
 import { DEVICES } from './lib/devices';
 import { models } from './lib/loadModels';
 import { QUANT_LEVELS } from './lib/quants';
+import { readParams, writeParams } from './lib/urlState';
 import { useTheme } from './lib/useTheme';
 
+const DEFAULT_RAM = 16;
+const DEFAULT_CTX = 8192;
+const DEFAULT_QUANT_ID = 'q4_k_m';
+const DEFAULT_DEVICE_ID = 'apple-m3-pro';
+const DEFAULT_BW = 150;
+
 export function App(): JSX.Element {
-  const [ramGB, setRamGB] = useState(16);
-  const [contextLen, setContextLen] = useState(8192);
-  const [quant, setQuant] = useState(QUANT_LEVELS.find((q) => q.id === 'q4_k_m')!);
-  const [device, setDevice] = useState(DEVICES.find((d) => d.id === 'apple-m3-pro')!);
-  const [customBandwidthGBps, setCustomBandwidthGBps] = useState(150);
+  const [ramGB, setRamGB] = useState(DEFAULT_RAM);
+  const [contextLen, setContextLen] = useState(DEFAULT_CTX);
+  const [quant, setQuant] = useState(QUANT_LEVELS.find((q) => q.id === DEFAULT_QUANT_ID)!);
+  const [device, setDevice] = useState(DEVICES.find((d) => d.id === DEFAULT_DEVICE_ID)!);
+  const [customBandwidthGBps, setCustomBandwidthGBps] = useState(DEFAULT_BW);
   const { theme, toggle } = useTheme();
+
+  // Hydrate from the URL after mount. The prerender runs in Node, so we render defaults
+  // server-side and then snap to the URL-derived state once we hit the browser.
+  useEffect(() => {
+    const params = readParams();
+    const ram = Number(params.get('ram'));
+    if (Number.isFinite(ram) && ram > 0) setRamGB(ram);
+    const ctx = Number(params.get('ctx'));
+    if (Number.isFinite(ctx) && ctx > 0) setContextLen(ctx);
+    const q = QUANT_LEVELS.find((x) => x.id === params.get('quant'));
+    if (q) setQuant(q);
+    const d = DEVICES.find((x) => x.id === params.get('device'));
+    if (d) setDevice(d);
+    const bw = Number(params.get('bw'));
+    if (Number.isFinite(bw) && bw > 0) setCustomBandwidthGBps(bw);
+  }, []);
+
+  useEffect(() => {
+    // Always write every key in scope so any populated URL is self-contained and
+    // bookmark-stable across future default changes. Cold-visit URLs get auto-populated
+    // on mount with the current defaults; if those defaults later change, existing
+    // bookmarks still resolve to the values they captured.
+    writeParams({
+      ram: String(ramGB),
+      ctx: String(contextLen),
+      quant: quant.id,
+      device: device.id,
+      // bw is only meaningful when the device is "custom"; otherwise omit so flipping
+      // device doesn't leave a stale bw value pinned in the URL.
+      bw: device.id === 'custom' ? String(customBandwidthGBps) : null,
+    });
+  }, [ramGB, contextLen, quant, device, customBandwidthGBps]);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">

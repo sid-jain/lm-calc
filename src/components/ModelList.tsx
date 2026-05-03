@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { decodeTokensPerSecond, estimateMemory } from '../lib/memory';
 import { SPEED_STYLES, speedTier, type SpeedTier } from '../lib/speedTier';
 import {
@@ -8,7 +8,11 @@ import {
   type SortKey,
 } from '../lib/sortRows';
 import type { Model, QuantLevel } from '../lib/types';
+import { readParams, writeParams } from '../lib/urlState';
 import { ModelRow } from './ModelRow';
+
+const DEFAULT_SORT: SortKey = 'memory-asc';
+const VALID_SORT_KEYS = new Set(SORT_OPTIONS.map((o) => o.value));
 
 interface Props {
   models: Model[];
@@ -55,7 +59,7 @@ export function ModelList({
   ramGB,
   bandwidthGBps,
 }: Props): JSX.Element {
-  const [sortKey, setSortKey] = useState<SortKey>('memory-asc');
+  const [sortKey, setSortKey] = useState<SortKey>(DEFAULT_SORT);
 
   const allDevelopers = useMemo(() => {
     const set = new Set(models.map((m) => m.developer));
@@ -72,6 +76,28 @@ export function ModelList({
       return next;
     });
   };
+
+  useEffect(() => {
+    const params = readParams();
+    const sort = params.get('sort');
+    if (sort && VALID_SORT_KEYS.has(sort as SortKey)) setSortKey(sort as SortKey);
+    const excl = params.get('excl');
+    if (excl) {
+      const valid = new Set(allDevelopers);
+      const restored = excl.split(',').filter((d) => valid.has(d));
+      if (restored.length > 0) setExcludedDevs(new Set(restored));
+    }
+  }, [allDevelopers]);
+
+  useEffect(() => {
+    // Always pin sort explicitly so bookmarks survive a future DEFAULT_SORT change.
+    // "no excl param" is unambiguous (= no exclusions), so we omit it when nothing is
+    // excluded rather than writing an empty value.
+    writeParams({
+      sort: sortKey,
+      excl: excludedDevs.size > 0 ? Array.from(excludedDevs).sort().join(',') : null,
+    });
+  }, [sortKey, excludedDevs]);
 
   const grouped = useMemo(() => {
     const all = models
