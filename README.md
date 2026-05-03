@@ -1,4 +1,4 @@
-# LLM RAM Calculator
+# LLM RAM and Speed Calculator
 
 A static web tool that takes available RAM, context length, quantization, and target hardware, and lists which open-weight LLMs fit and roughly how fast they decode (tokens per second). No backend, no accounts.
 
