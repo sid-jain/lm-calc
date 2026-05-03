@@ -145,9 +145,32 @@ async function deriveActiveParams(
   return null;
 }
 
+// Pipeline tags whose decode math fits this calculator: decoder-only LLMs that emit text,
+// optionally accepting other modalities as input. We deliberately skip `any-to-any` (omni
+// models with non-text output paths) and `text2text-generation` (encoder-decoder, different
+// math) — adding them would mean reporting a "tok/s" number that doesn't apply.
+const PIPELINE_TAGS = [
+  'text-generation',
+  'image-text-to-text',
+  'audio-text-to-text',
+  'video-text-to-text',
+];
+
 async function listRecent(owner: string): Promise<HfModel[]> {
-  const url = `https://huggingface.co/api/models?author=${encodeURIComponent(owner)}&pipeline_tag=text-generation&sort=createdAt&direction=-1&limit=${PER_DEV_LIMIT}`;
-  return (await fetchJson<HfModel[]>(url)) ?? [];
+  const results = await Promise.all(
+    PIPELINE_TAGS.map((tag) => {
+      const url = `https://huggingface.co/api/models?author=${encodeURIComponent(owner)}&pipeline_tag=${tag}&sort=createdAt&direction=-1&limit=${PER_DEV_LIMIT}`;
+      return fetchJson<HfModel[]>(url);
+    }),
+  );
+  const seen = new Map<string, HfModel>();
+  for (const items of results) {
+    if (!items) continue;
+    for (const m of items) if (!seen.has(m.id)) seen.set(m.id, m);
+  }
+  return Array.from(seen.values()).sort((a, b) =>
+    (b.createdAt ?? '').localeCompare(a.createdAt ?? ''),
+  );
 }
 
 async function detectMoEAndParams(repo: string): Promise<{ moe: boolean | null; paramsB: number | null }> {
