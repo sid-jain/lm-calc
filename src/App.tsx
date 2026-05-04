@@ -79,7 +79,7 @@ export function App(): JSX.Element {
             Methodology
           </button>
           <a
-            href="https://github.com"
+            href="https://github.com/sid-jain/lm-calc"
             target="_blank"
             rel="noreferrer"
             className="hover:text-slate-900 dark:hover:text-slate-100"

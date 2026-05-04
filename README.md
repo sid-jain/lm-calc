@@ -1,10 +1,12 @@
-# LLM RAM and Speed Calculator
+# <img src="public/favicon.svg" width="32" align="center" alt="" /> LM Calc
 
-A static web tool that answers: *"given my hardware, which open-weight LLMs can I actually run — and which quant should I use?"* Set your RAM budget, context length, minimum decode speed, and device; get back a ranked list of models, each at the highest-quality quantization that fits your constraints. No backend, no accounts.
+Which open-weight LLMs will actually run on your hardware, and at which quant? Tell the calculator your RAM, context length, minimum decode speed, and device — get back a ranked list of models, each at the highest-quality quantization that still fits. Fully client-side. No backend, no accounts, no sign-up.
 
-## Live demo
+## Use it
 
 <https://lmcalc.app>
+
+> **Status: alpha.** The math and [methodology](METHODOLOGY.md) are still being validated against real-world measurements. Predicted RAM and tok/s ranges should be treated as estimates, not guarantees. Reports of what you actually observe — especially when they disagree with the calculator — are the most useful contribution right now. See [Contributing](CONTRIBUTING.md#reporting-real-world-measurements).
 
 ## What it does
 
@@ -28,14 +30,14 @@ A static web tool that answers: *"given my hardware, which open-weight LLMs can 
 - Decode speed range (×0.50 – ×0.85 of theoretical maximum)
 - Click to expand: full memory breakdown, architectural details, HuggingFace link
 
-**Filtered-out models** — collapsible section below the matches. Each filtered model shows all reasons that apply, colour-coded:
+**Filtered-out models** — collapsible section below the matches. Each filtered model shows all reasons that apply:
 
-| Colour | Reason | Meaning |
-|---|---|---|
-| Rose | Needs ≥X GB | Even the lowest-quality quant exceeds your RAM budget |
-| Amber | Max Y tok/s | Fits in RAM (or would, if budget were larger) but can't reach min speed |
-| Sky | Max ZK ctx | Model's maximum context is below your required context length |
-| Slate | Dev excluded | Filtered out by your developer selection |
+| Reason | Meaning |
+|---|---|
+| Needs ≥X GB | Even the lowest-quality quant exceeds your RAM budget |
+| Max Y tok/s | Fits in RAM (or would, if budget were larger) but can't reach min speed |
+| Max ZK ctx | Model's maximum context is below your required context length |
+| Dev excluded | Filtered out by your developer selection |
 
 RAM and speed failures are computed independently: a model can show both if it's too large *and* too slow on your bandwidth.
 
@@ -45,13 +47,54 @@ See [METHODOLOGY.md](METHODOLOGY.md). It is also rendered directly in the app (c
 
 ## How to add a model
 
-For most models, add an entry to [`scripts/model-sources.json`](scripts/model-sources.json) with just the HuggingFace repo:
+There are two flows. Use **A** when you already know the HuggingFace repo. Use **B** to sweep recent releases from tracked developers — and, for MoE models, to have `activeParams` filled in automatically.
 
-```json
-{ "hfRepo": "Qwen/Qwen3.6-27B" }
+### Flow A — hand-add a known model
+
+```bash
+# 1. Add an entry to scripts/model-sources.json. For most dense models,
+#    just the repo is enough:
+#      { "hfRepo": "Qwen/Qwen3.6-27B" }
+#    For MoE, activeParams is required (see Optional overrides below):
+#      { "hfRepo": "Qwen/Qwen3-30B-A3B", "activeParams": 3.3 }
+
+# 2. Regenerate src/data/models.json from HuggingFace.
+#    Reads config.json (architecture), safetensors metadata (exact param
+#    count), and a small owner→developer map to fill in everything else.
+npm run fetch-models
+
+# 3. Verify the math fixtures still pass.
+npm test
+
+# 4. (Optional) eyeball the new row in the dev server.
+npm run dev
+
+# 5. Commit both files together.
+git add scripts/model-sources.json src/data/models.json
+git commit -m "Add <model name>"
 ```
 
-Then run `npm run fetch-models`. The script reads `config.json` (architecture), the safetensors metadata (exact parameter count), and a small owner→developer map to fill in everything else. The output lands in `src/data/models.json`. Run `npm test` to verify the math fixtures, then commit both files.
+### Flow B — discover recent releases
+
+`npm run discover-models` lists recent text-generation models from the tracked developers (Meta, Alibaba, Google, Mistral, Microsoft, DeepSeek, Moonshot AI) that aren't in `model-sources.json` yet, with paste-ready JSON lines. Quantized variants (`-GGUF`, `-AWQ`, `-FP8`, etc.) and training-step checkpoints are filtered out. Default lookback is 30 days; override with `SINCE_DAYS=N`.
+
+```bash
+# Plain run — uses repo-name suffix heuristics (-A3B, -A22B) for MoE.
+npm run discover-models
+
+# With ANTHROPIC_API_KEY set, the script hands each MoE model's HF README
+# to Haiku 4.5 to extract activeParams, so the emitted JSON is ready to
+# paste with no manual lookup. This is the recommended path for MoE.
+ANTHROPIC_API_KEY=sk-ant-... npm run discover-models
+
+# Or have it append every candidate directly to model-sources.json.
+ANTHROPIC_API_KEY=sk-ant-... npm run discover-models -- --write
+
+# Then the same fetch / test / commit dance as Flow A:
+npm run fetch-models && npm test
+```
+
+Without `ANTHROPIC_API_KEY`, anything the suffix heuristic can't infer gets `"activeParams": 0` as a placeholder. `npm run fetch-models` rejects 0 with a pointed error, so no entry silently lands with the wrong number — you'll just have to fill it in by hand from the model card.
 
 ### Optional overrides
 
@@ -75,12 +118,6 @@ The displayed name is mechanically derived from the repo's tail (dashes → spac
 - **Attention type**: MLA (`kv_lora_rank` in config), hybrid-linear (`full_attention_interval`), Gemma-style mixed (`layer_types` / `sliding_window_pattern` / `model_type: gemma2`), and GQA/MQA/full from head counts. Phi-3.5's misleading `sliding_window` is correctly ignored.
 - **MoE**: presence of `num_experts` / `num_local_experts` / `n_routed_experts` in config.
 - **Parameter count**: HF API `safetensors.total` first; falls back to `model.safetensors.index.json` `metadata.total_size` divided by bytes-per-param from `torch_dtype`; final fallback is a HEAD on the single-shard `model.safetensors`.
-
-### Discovering new releases
-
-Run `npm run discover-models` to list recent text-generation models from the tracked developers (Meta, Alibaba, Google, Mistral, Microsoft, DeepSeek, Moonshot AI) that aren't in `model-sources.json` yet. The output is a list with paste-ready JSON lines. Pass `--write` (i.e. `npm run discover-models -- --write`) to append every candidate directly to the file. Default lookback is 30 days; override with `SINCE_DAYS=N`. Quantized variants (`-GGUF`, `-AWQ`, `-FP8`, etc.) and training-step checkpoints (`-12000`) are filtered out.
-
-For MoE candidates, the script tries to fill `activeParams` automatically: first from the repo-name suffix (`-A3B`, `-A22B`), then by handing the model card README to Haiku 4.5 for extraction (requires `ANTHROPIC_API_KEY`). Anything it can't derive gets `"activeParams": 0` as a placeholder — `npm run fetch-models` rejects 0 with a pointed error, so no entry silently lands with the wrong number.
 
 ### Gated repos
 
