@@ -51,9 +51,6 @@ export function compareWithin(a: Row, b: Row, key: SortKey, ctx: SortContext): n
     case 'name':
       return a.model.displayName.localeCompare(b.model.displayName);
     case 'developer':
-      return (
-        a.model.developer.localeCompare(b.model.developer) ||
-        a.model.params - b.model.params
-      );
+      return a.model.developer.localeCompare(b.model.developer) || a.model.params - b.model.params;
   }
 }

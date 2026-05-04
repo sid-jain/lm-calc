@@ -72,9 +72,11 @@ export function App(): JSX.Element {
                 setShowMethodology(true);
               }
             }}
-            className={showMethodology
-              ? 'font-medium text-slate-900 dark:text-slate-100'
-              : 'hover:text-slate-900 dark:hover:text-slate-100'}
+            className={
+              showMethodology
+                ? 'font-medium text-slate-900 dark:text-slate-100'
+                : 'hover:text-slate-900 dark:hover:text-slate-100'
+            }
           >
             Methodology
           </button>

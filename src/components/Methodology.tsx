@@ -15,9 +15,8 @@ export function Methodology(): JSX.Element {
 
   return (
     <div
-      className="prose prose-slate max-w-2xl dark:prose-invert prose-code:before:content-none prose-code:after:content-none prose-code:rounded prose-code:bg-slate-100 prose-code:px-1 prose-code:py-0.5 prose-code:text-xs dark:prose-code:bg-slate-800"
-      // Content is sourced from our own METHODOLOGY.md — not user input
-      // eslint-disable-next-line react/no-danger
+      className="prose prose-slate max-w-2xl dark:prose-invert"
+      // Content is sourced from our own METHODOLOGY.md — not user input.
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

@@ -12,14 +12,14 @@ Which open-weight LLMs will actually run on your hardware, and at which quant? T
 
 ### Constraints (inputs)
 
-| Control | What it sets |
-|---|---|
-| **Available RAM** | VRAM or unified-memory budget in GB |
-| **Context length** | Required token context; models that don't support it are filtered out |
-| **Min speed** | Minimum acceptable decode rate (tok/s); models that can't reach it are filtered out |
-| **Quantization** | *Recommend best quant* (default) lets the engine pick; selecting a specific quant locks every result to that quant |
-| **Device** | Sets memory bandwidth used for speed estimation; pick from common Apple, Nvidia, and DDR presets or enter a custom GB/s value |
-| **Developers** | Pill filter to include or exclude specific model families |
+| Control            | What it sets                                                                                                                  |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| **Available RAM**  | VRAM or unified-memory budget in GB                                                                                           |
+| **Context length** | Required token context; models that don't support it are filtered out                                                         |
+| **Min speed**      | Minimum acceptable decode rate (tok/s); models that can't reach it are filtered out                                           |
+| **Quantization**   | _Recommend best quant_ (default) lets the engine pick; selecting a specific quant locks every result to that quant            |
+| **Device**         | Sets memory bandwidth used for speed estimation; pick from common Apple, Nvidia, and DDR presets or enter a custom GB/s value |
+| **Developers**     | Pill filter to include or exclude specific model families                                                                     |
 
 ### Results (outputs)
 
@@ -32,14 +32,14 @@ Which open-weight LLMs will actually run on your hardware, and at which quant? T
 
 **Filtered-out models** — collapsible section below the matches. Each filtered model shows all reasons that apply:
 
-| Reason | Meaning |
-|---|---|
-| Needs ≥X GB | Even the lowest-quality quant exceeds your RAM budget |
-| Max Y tok/s | Fits in RAM (or would, if budget were larger) but can't reach min speed |
-| Max ZK ctx | Model's maximum context is below your required context length |
-| Dev excluded | Filtered out by your developer selection |
+| Reason       | Meaning                                                                 |
+| ------------ | ----------------------------------------------------------------------- |
+| Needs ≥X GB  | Even the lowest-quality quant exceeds your RAM budget                   |
+| Max Y tok/s  | Fits in RAM (or would, if budget were larger) but can't reach min speed |
+| Max ZK ctx   | Model's maximum context is below your required context length           |
+| Dev excluded | Filtered out by your developer selection                                |
 
-RAM and speed failures are computed independently: a model can show both if it's too large *and* too slow on your bandwidth.
+RAM and speed failures are computed independently: a model can show both if it's too large _and_ too slow on your bandwidth.
 
 ## Methodology
 
@@ -104,12 +104,12 @@ Add any of these fields to the entry when auto-derivation can't cover the case:
 { "hfRepo": "Qwen/Qwen3-30B-A3B", "activeParams": 3.3 }
 ```
 
-| Override | When you need it |
-|---|---|
-| `activeParams` | **Required for MoE.** Per-token active param count in billions. The script will refuse to proceed without it. |
-| `configRepo` | When `hfRepo` is gated. The script fetches `config.json` and safetensors metadata from this mirror instead. |
-| `developer` | When the HF org slug isn't in the built-in map. |
-| `attentionOverride` | Last-resort escape hatch when auto-detection picks the wrong attention type. |
+| Override            | When you need it                                                                                              |
+| ------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `activeParams`      | **Required for MoE.** Per-token active param count in billions. The script will refuse to proceed without it. |
+| `configRepo`        | When `hfRepo` is gated. The script fetches `config.json` and safetensors metadata from this mirror instead.   |
+| `developer`         | When the HF org slug isn't in the built-in map.                                                               |
+| `attentionOverride` | Last-resort escape hatch when auto-detection picks the wrong attention type.                                  |
 
 The displayed name is mechanically derived from the repo's tail (dashes → spaces, first letter capitalized). It is intentionally not curated — `Llama 3.3 70B Instruct` and `Gemma 3 27b pt` are what HuggingFace publishes, and that's what we show.
 

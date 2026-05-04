@@ -36,8 +36,7 @@ export function kvCacheGB(model: Model, contextLen: number): number {
     const fullLayers = Math.round(layers * (fullAttentionRatio ?? 0));
     const slidingLayers = layers - fullLayers;
     const slidingCtx = Math.min(ctx, slidingWindowSize ?? ctx);
-    const bytes =
-      fullLayers * bytesPerLayerAt(ctx) + slidingLayers * bytesPerLayerAt(slidingCtx);
+    const bytes = fullLayers * bytesPerLayerAt(ctx) + slidingLayers * bytesPerLayerAt(slidingCtx);
     return bytes / 1e9;
   }
 
@@ -58,7 +57,8 @@ export function decodeTokensPerSecond(
   contextLen: number,
   bandwidthGBps: number,
 ): SpeedEstimate {
-  const activeParams = model.isMoE && model.activeParams !== null ? model.activeParams : model.params;
+  const activeParams =
+    model.isMoE && model.activeParams !== null ? model.activeParams : model.params;
   const weightBytesPerToken = activeParams * quant.bytesPerParam * 1e9;
   const kvBytesPerToken = kvCacheGB(model, contextLen) * 1e9;
   const bytesPerToken = weightBytesPerToken + kvBytesPerToken;

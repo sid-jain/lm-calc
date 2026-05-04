@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "fetch-models": "tsx scripts/fetch-models.ts",
     "discover-models": "tsx scripts/discover-models.ts"
   },

@@ -121,7 +121,9 @@ describe('recommend — MoE', () => {
     expect(matches.length).toBeGreaterThan(0);
     const rec = matches[0];
     expect(rec.model.id).toBe('mixtral-8x7b-v0-1');
-    expect(rec.estimate.weightsGB).toBeGreaterThan(rec.model.activeParams! * rec.quant.bytesPerParam);
+    expect(rec.estimate.weightsGB).toBeGreaterThan(
+      rec.model.activeParams! * rec.quant.bytesPerParam,
+    );
     expect(rec.speed.lowTps).toBeGreaterThan(5);
   });
 
@@ -187,7 +189,7 @@ describe('recommend — rejection reasons', () => {
     const { matches, rejected } = recommend([tinyCtxHugeSlowModel], QUANT_LEVELS, {
       ramGB: 8,
       minContextLen: 8192,
-      minTps: 100,  // impossibly high — ensures too_slow fires even at Q2_K
+      minTps: 100, // impossibly high — ensures too_slow fires even at Q2_K
       bandwidthGBps: 10,
       lockQuantId: null,
       excludedDevs: new Set(['Mistral AI']),

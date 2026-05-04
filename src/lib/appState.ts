@@ -1,10 +1,4 @@
-import {
-  DEFAULT_BW,
-  DEFAULT_CTX,
-  DEFAULT_DEVICE_ID,
-  DEFAULT_MIN_TPS,
-  DEFAULT_RAM,
-} from './config';
+import { DEFAULT_BW, DEFAULT_CTX, DEFAULT_DEVICE_ID, DEFAULT_MIN_TPS, DEFAULT_RAM } from './config';
 import { AUTO_QUANT_ID } from './quants';
 
 export interface Profile {

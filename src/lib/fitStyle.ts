@@ -9,7 +9,7 @@ export function fitStatus(totalGB: number, ramGB: number): FitStatus {
 }
 
 export const FIT_STYLES: Record<FitStatus, { tone: string; icon: string; label: string }> = {
-  fits:  { tone: 'text-emerald-600 dark:text-emerald-400', icon: '✓', label: 'Fits' },
-  tight: { tone: 'text-amber-600 dark:text-amber-400',     icon: '⚠', label: 'Tight' },
-  over:  { tone: 'text-rose-600 dark:text-rose-400',       icon: '✗', label: "Doesn't fit" },
+  fits: { tone: 'text-emerald-600 dark:text-emerald-400', icon: '✓', label: 'Fits' },
+  tight: { tone: 'text-amber-600 dark:text-amber-400', icon: '⚠', label: 'Tight' },
+  over: { tone: 'text-rose-600 dark:text-rose-400', icon: '✗', label: "Doesn't fit" },
 };

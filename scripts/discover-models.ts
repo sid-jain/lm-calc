@@ -173,15 +173,18 @@ async function listRecent(owner: string): Promise<HfModel[]> {
   );
 }
 
-async function detectMoEAndParams(repo: string): Promise<{ moe: boolean | null; paramsB: number | null }> {
+async function detectMoEAndParams(
+  repo: string,
+): Promise<{ moe: boolean | null; paramsB: number | null }> {
   // config.json tells us MoE, also gives us torch_dtype to convert bytes → params if we
   // need to use the safetensors index fallback.
   const cfgRaw = await fetchJson<Record<string, unknown>>(
     `https://huggingface.co/${repo}/raw/main/config.json`,
   );
-  const cfg = (cfgRaw?.text_config && typeof cfgRaw.text_config === 'object'
-    ? (cfgRaw.text_config as Record<string, unknown>)
-    : cfgRaw) ?? {};
+  const cfg =
+    (cfgRaw?.text_config && typeof cfgRaw.text_config === 'object'
+      ? (cfgRaw.text_config as Record<string, unknown>)
+      : cfgRaw) ?? {};
   const moe = cfgRaw
     ? Boolean(cfg.num_experts || cfg.num_local_experts || cfg.n_routed_experts)
     : null;
@@ -286,14 +289,17 @@ async function main() {
 
     if (candidates.length === 0) continue;
     totalCandidates += candidates.length;
-    console.log(`\n=== ${dev.label}  (${candidates.length} candidate${candidates.length === 1 ? '' : 's'}) ===`);
+    console.log(
+      `\n=== ${dev.label}  (${candidates.length} candidate${candidates.length === 1 ? '' : 's'}) ===`,
+    );
     for (const c of candidates) {
       const sizeStr = `~${c.paramsB.toFixed(c.paramsB < 10 ? 1 : 0)}B`;
       let arch = c.moe === true ? 'MoE' : c.moe === false ? 'dense' : '?';
       if (c.moe) {
-        arch += c.activeParams !== null
-          ? ` A${c.activeParams}B from ${c.activeSource}`
-          : ' ⚠ activeParams placeholder';
+        arch +=
+          c.activeParams !== null
+            ? ` A${c.activeParams}B from ${c.activeSource}`
+            : ' ⚠ activeParams placeholder';
       }
       if (c.moe && c.activeParams === null) moeUnresolvedCount++;
       console.log(`  ${c.repo}  (${c.created}, ${sizeStr}, ${arch})`);
@@ -309,7 +315,9 @@ async function main() {
 
   if (writeMode) {
     appendEntries(toAppend);
-    console.log(`\nAppended ${toAppend.length} entr${toAppend.length === 1 ? 'y' : 'ies'} to model-sources.json.`);
+    console.log(
+      `\nAppended ${toAppend.length} entr${toAppend.length === 1 ? 'y' : 'ies'} to model-sources.json.`,
+    );
     if (moeUnresolvedCount > 0) {
       console.log(
         `${moeUnresolvedCount} MoE entr${moeUnresolvedCount === 1 ? 'y has' : 'ies have'} ` +

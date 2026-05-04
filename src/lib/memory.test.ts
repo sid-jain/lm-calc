@@ -130,13 +130,7 @@ describe('kvCacheGB — MLA', () => {
     // MLA: ~0.58 GB. Ratio > 30x. Locks in the MLA choice.
     const mla = kvCacheGB(KIMI_K2, 8192);
     const naive =
-      (KIMI_K2.arch.layers *
-        2 *
-        KIMI_K2.arch.kvHeads *
-        KIMI_K2.arch.headDim *
-        8192 *
-        2) /
-      1e9;
+      (KIMI_K2.arch.layers * 2 * KIMI_K2.arch.kvHeads * KIMI_K2.arch.headDim * 8192 * 2) / 1e9;
     expect(naive / mla).toBeGreaterThan(30);
   });
 });

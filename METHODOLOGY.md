@@ -8,7 +8,7 @@ Total memory is the sum of three terms:
 total = weights + kv_cache + framework_overhead
 ```
 
-- **Weights** = `params × bytes_per_param` (quantization byte averages from llama.cpp). For MoE models (Mixtral, Qwen 3 -A* variants) `params` is the **total** count — all experts must be in memory for inference.
+- **Weights** = `params × bytes_per_param` (quantization byte averages from llama.cpp). For MoE models (Mixtral, Qwen 3 -A\* variants) `params` is the **total** count — all experts must be in memory for inference.
 - **KV cache** = `2 × kv_heads × head_dim × ctx × 2 bytes × layers` at FP16.
   - Mixed-attention models (Gemma 2/3) use `min(ctx, sliding_window)` for sliding layers.
   - **MLA** models (DeepSeek V3, Kimi K2, Moonlight) store a compressed latent + small rope cache: `(kv_lora_rank + qk_rope_head_dim) × 2 bytes × layers × ctx` — typically ~30× smaller than naive GQA.

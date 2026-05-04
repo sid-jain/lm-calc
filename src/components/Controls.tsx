@@ -162,7 +162,10 @@ export function Controls({
             value={quant.id}
             onChange={(e) => {
               const id = e.target.value;
-              if (id === AUTO_QUANT_ID) { onQuant(AUTO_QUANT); return; }
+              if (id === AUTO_QUANT_ID) {
+                onQuant(AUTO_QUANT);
+                return;
+              }
               const next = QUANT_LEVELS.find((q) => q.id === id);
               if (next) onQuant(next);
             }}

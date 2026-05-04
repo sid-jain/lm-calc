@@ -20,22 +20,30 @@ interface Props {
 }
 
 const REJECTION_TONES: Record<RejectionReason['type'], string> = {
-  no_quant_fits_ram: FIT_STYLES.over.tone,                  // rose  — hard RAM blocker
-  too_slow:          'text-amber-600 dark:text-amber-400',  // amber — speed threshold miss
-  context_too_short: 'text-sky-600 dark:text-sky-400',      // sky   — model ctx capability
-  excluded_dev:      'text-slate-400 dark:text-slate-500',  // slate — user filter choice
+  no_quant_fits_ram: FIT_STYLES.over.tone, // rose  — hard RAM blocker
+  too_slow: 'text-amber-600 dark:text-amber-400', // amber — speed threshold miss
+  context_too_short: 'text-sky-600 dark:text-sky-400', // sky   — model ctx capability
+  excluded_dev: 'text-slate-400 dark:text-slate-500', // slate — user filter choice
 };
 
 function rejectionValue(reason: RejectionReason): string {
   switch (reason.type) {
-    case 'no_quant_fits_ram': return `Needs ≥${reason.minRamGB.toFixed(1)} GB`;
-    case 'too_slow':          return `Max ${reason.maxLowTps < 1 ? '<1' : Math.round(reason.maxLowTps)} tok/s`;
-    case 'context_too_short': return `Max ${formatContext(reason.maxContext)} ctx`;
-    case 'excluded_dev':      return 'Dev excluded';
+    case 'no_quant_fits_ram':
+      return `Needs ≥${reason.minRamGB.toFixed(1)} GB`;
+    case 'too_slow':
+      return `Max ${reason.maxLowTps < 1 ? '<1' : Math.round(reason.maxLowTps)} tok/s`;
+    case 'context_too_short':
+      return `Max ${formatContext(reason.maxContext)} ctx`;
+    case 'excluded_dev':
+      return 'Dev excluded';
   }
 }
 
-function RejectedRow({ model, filterReasons, hardwareReasons }: RejectedRecommendation): JSX.Element {
+function RejectedRow({
+  model,
+  filterReasons,
+  hardwareReasons,
+}: RejectedRecommendation): JSX.Element {
   const allReasons: RejectionReason[] = [...filterReasons, ...hardwareReasons];
   return (
     <li className="flex items-start justify-between gap-3 border-b border-slate-100 px-3 py-2 last:border-b-0 dark:border-slate-800/60">
@@ -134,7 +142,9 @@ export function Recommender({
         <details className="border-t-2 border-slate-200 dark:border-slate-700">
           <summary className="flex cursor-pointer select-none items-center justify-between bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:bg-slate-900/40 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-slate-200">
             <span>{rejected.length} filtered out</span>
-            <span aria-hidden="true" className="text-slate-400 dark:text-slate-500">▼</span>
+            <span aria-hidden="true" className="text-slate-400 dark:text-slate-500">
+              ▼
+            </span>
           </summary>
           <ul>
             {rejected.map((r) => (

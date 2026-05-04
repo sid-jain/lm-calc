@@ -36,7 +36,7 @@ export type RejectionReason = FilterReason | HardwareReason;
 
 export interface RejectedRecommendation {
   model: Model;
-  filterReasons: FilterReason[];    // 0–2, any combination
+  filterReasons: FilterReason[]; // 0–2, any combination
   hardwareReasons: HardwareReason[]; // 0–2, any combination
 }
 
@@ -51,11 +51,7 @@ const QUANT_WEIGHT = 100;
 const TPS_WEIGHT = 1;
 const PARAMS_WEIGHT = 0.001;
 
-export function recommend(
-  models: Model[],
-  quants: QuantLevel[],
-  c: Constraints,
-): RecommendOutput {
+export function recommend(models: Model[], quants: QuantLevel[], c: Constraints): RecommendOutput {
   const matches: Recommendation[] = [];
   const rejected: RejectedRecommendation[] = [];
 
@@ -69,9 +65,7 @@ export function recommend(
       filterReasons.push({ type: 'context_too_short', maxContext: model.arch.maxContext });
     }
 
-    const candidates = c.lockQuantId
-      ? quants.filter((q) => q.id === c.lockQuantId)
-      : quants;
+    const candidates = c.lockQuantId ? quants.filter((q) => q.id === c.lockQuantId) : quants;
 
     // Use the cheapest (lowest bytesPerParam) candidate to check hardware limits:
     //   - worst case for RAM  → minRamGB is the minimum possible RAM needed
@@ -86,7 +80,12 @@ export function recommend(
       hardwareReasons.push({ type: 'no_quant_fits_ram', minRamGB: ramAtCheapest });
     }
 
-    const speedAtCheapest = decodeTokensPerSecond(model, cheapest, c.minContextLen, c.bandwidthGBps);
+    const speedAtCheapest = decodeTokensPerSecond(
+      model,
+      cheapest,
+      c.minContextLen,
+      c.bandwidthGBps,
+    );
     if (speedAtCheapest.lowTps < c.minTps) {
       hardwareReasons.push({ type: 'too_slow', maxLowTps: speedAtCheapest.lowTps });
     }

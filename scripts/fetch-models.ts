@@ -90,9 +90,7 @@ function deriveDeveloper(hfRepo: string): string {
   const owner = hfRepo.split('/')[0] ?? hfRepo;
   if (DEVELOPER_BY_OWNER[owner]) return DEVELOPER_BY_OWNER[owner];
   // Prettify the slug as a fallback. Users can override.
-  return owner
-    .replace(/[-_]+/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return owner.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 async function fetchConfig(repo: string): Promise<HfConfig> {
@@ -125,7 +123,8 @@ const BYTES_PER_DTYPE: Record<string, number> = {
 };
 
 function bytesPerParam(cfg: HfConfig): number {
-  const dtype = (cfg as Record<string, unknown>).torch_dtype ?? (cfg as Record<string, unknown>).dtype;
+  const dtype =
+    (cfg as Record<string, unknown>).torch_dtype ?? (cfg as Record<string, unknown>).dtype;
   if (typeof dtype === 'string' && BYTES_PER_DTYPE[dtype]) return BYTES_PER_DTYPE[dtype];
   return 2; // bf16/fp16 is the modern default
 }
@@ -169,7 +168,9 @@ async function fetchParams(repo: string, cfg: HfConfig): Promise<number> {
     headers: HF_TOKEN ? { Authorization: `Bearer ${HF_TOKEN}` } : {},
   });
   if (headRes.ok) {
-    const size = Number(headRes.headers.get('x-linked-size') ?? headRes.headers.get('content-length'));
+    const size = Number(
+      headRes.headers.get('x-linked-size') ?? headRes.headers.get('content-length'),
+    );
     if (size > 0) {
       const params = size / bytesPerParam(cfg);
       return Math.round((params / 1e9) * 1000) / 1000;
@@ -254,7 +255,8 @@ async function buildModel(src: SourceEntry): Promise<Model> {
 
   const isMoE = detectMoE(cfg);
   if (isMoE && (src.activeParams === undefined || src.activeParams <= 0)) {
-    const placeholder = src.activeParams === 0 ? ' (currently set to the discover-models placeholder 0)' : '';
+    const placeholder =
+      src.activeParams === 0 ? ' (currently set to the discover-models placeholder 0)' : '';
     throw new Error(
       `${src.hfRepo}: detected MoE (config has expert count). Set "activeParams"${placeholder} ` +
         `to the per-token active parameter count from the model card, in billions.`,
@@ -270,7 +272,7 @@ async function buildModel(src: SourceEntry): Promise<Model> {
 
   // sliding_window appears in many configs, but it's only meaningful for "mixed".
   // Phi-3.5 sets it without using sliding attention; we ignore it there.
-  const slidingWindowSize = attentionType === 'mixed' ? cfg.sliding_window ?? null : null;
+  const slidingWindowSize = attentionType === 'mixed' ? (cfg.sliding_window ?? null) : null;
 
   return {
     id: deriveId(src.hfRepo),
@@ -279,7 +281,7 @@ async function buildModel(src: SourceEntry): Promise<Model> {
     hfRepo: src.hfRepo,
     params,
     isMoE,
-    activeParams: isMoE ? src.activeParams ?? null : null,
+    activeParams: isMoE ? (src.activeParams ?? null) : null,
     arch: {
       layers,
       attnHeads,
@@ -301,7 +303,11 @@ async function buildModel(src: SourceEntry): Promise<Model> {
 async function main() {
   const raw = JSON.parse(readFileSync(SOURCES_PATH, 'utf-8')) as unknown[];
   for (const [i, entry] of raw.entries()) {
-    if (typeof entry !== 'object' || entry === null || typeof (entry as SourceEntry).hfRepo !== 'string') {
+    if (
+      typeof entry !== 'object' ||
+      entry === null ||
+      typeof (entry as SourceEntry).hfRepo !== 'string'
+    ) {
       throw new Error(
         `model-sources.json[${i}]: expected an object with an "hfRepo" field, got ${JSON.stringify(entry)}`,
       );
