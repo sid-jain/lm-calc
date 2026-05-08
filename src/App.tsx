@@ -3,7 +3,7 @@ import { Controls } from './components/Controls';
 import { Methodology } from './components/Methodology';
 import { Recommender } from './components/Recommender';
 import { INITIAL_STATE, reducer } from './lib/appState';
-import { DEFAULT_QUANT_ID } from './lib/config';
+import { DEFAULT_DEVICE_ID, DEFAULT_QUANT_ID } from './lib/config';
 import { DEVICES, CUSTOM_DEVICE_ID } from './lib/devices';
 import { models } from './lib/loadModels';
 import { AUTO_QUANT, AUTO_QUANT_ID, QUANT_LEVELS } from './lib/quants';
@@ -40,9 +40,18 @@ export function App(): JSX.Element {
   const resolvedQuant =
     QUANT_LEVELS.find((q) => q.id === (isAutoQuant ? DEFAULT_QUANT_ID : profile.quantId)) ??
     QUANT_LEVELS[5];
-  const device = DEVICES.find((d) => d.id === profile.deviceId) ?? DEVICES[4];
-  const bandwidthGBps =
-    profile.deviceId === CUSTOM_DEVICE_ID ? profile.customBandwidthGBps : device.bandwidthGBps;
+  const device =
+    profile.deviceId === CUSTOM_DEVICE_ID
+      ? {
+          id: CUSTOM_DEVICE_ID,
+          name: 'Custom',
+          category: 'custom' as const,
+          bandwidthGBps: profile.customBandwidthGBps,
+        }
+      : (DEVICES.find((d) => d.id === profile.deviceId) ??
+        DEVICES.find((d) => d.id === DEFAULT_DEVICE_ID)!);
+  const bandwidthGBps = device.bandwidthGBps;
+  const effectiveRamGB = device.memoryGB ?? profile.ramGB;
 
   useEffect(() => {
     const id = requestAnimationFrame(() => writeUrlParams(state));
@@ -131,10 +140,13 @@ export function App(): JSX.Element {
               onMinTps={(v) => dispatch({ type: 'SET_MIN_TPS', minTps: v })}
             />
 
-            <div className="mt-6">
+            <section className="mt-6">
+              <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                Models
+              </h3>
               <Recommender
                 models={models}
-                ramGB={profile.ramGB}
+                ramGB={effectiveRamGB}
                 contextLen={profile.contextLen}
                 bandwidthGBps={bandwidthGBps}
                 lockQuantId={isAutoQuant ? null : profile.quantId}
@@ -143,7 +155,7 @@ export function App(): JSX.Element {
                 onToggleDev={(dev) => dispatch({ type: 'TOGGLE_RECOMMEND_DEV', dev })}
                 onClearDevs={() => dispatch({ type: 'CLEAR_RECOMMEND_DEVS' })}
               />
-            </div>
+            </section>
           </main>
         </>
       )}
