@@ -56,9 +56,7 @@ export function Controls({
     <div className="space-y-4">
       {/* Row 1 — hardware: device + memory */}
       <section>
-        <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-          Hardware
-        </h3>
+        <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">Hardware</h3>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
           <div className="rounded-lg border border-slate-200 p-4 md:col-span-3 dark:border-slate-800">
             <label
@@ -177,9 +175,7 @@ export function Controls({
 
       {/* Row 2 — workload: context, min speed, quant */}
       <section>
-        <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-          Workload
-        </h3>
+        <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">Workload</h3>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-10">
           <div className="rounded-lg border border-slate-200 p-4 md:col-span-3 dark:border-slate-800">
             <label
