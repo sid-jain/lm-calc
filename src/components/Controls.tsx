@@ -23,7 +23,7 @@ const RAM_MIN = 1;
 const RAM_MAX = 1024;
 
 function groupDevices(): { group: string; devices: Device[] }[] {
-  const order: Device['category'][] = ['system', 'apple', 'nvidia'];
+  const order: Device['category'][] = ['system', 'apple', 'nvidia', 'amd'];
   return order.map((cat) => ({
     group: CATEGORY_LABELS[cat as keyof typeof CATEGORY_LABELS],
     devices: DEVICES.filter((d) => d.category === cat),
