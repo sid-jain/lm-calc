@@ -76,7 +76,10 @@ export function ModelRow({
       }
       rightSlot={
         <>
-          <div className="flex items-center justify-end gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
+          <div
+            className="flex items-center justify-end gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200"
+            title={fit.description}
+          >
             <span>
               {fmtGB(estimate.rangeGB.low)} - {fmtGB(estimate.rangeGB.high)} GB
             </span>
