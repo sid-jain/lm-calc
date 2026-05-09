@@ -15,8 +15,7 @@ interface Props {
   lockQuantId: string | null;
   minTps: number;
   excludedDevs: string[];
-  onToggleDev: (dev: string) => void;
-  onClearDevs: () => void;
+  onSetExcludedDevs: (devs: string[]) => void;
 }
 
 const REJECTION_TONES: Record<RejectionReason['type'], string> = {
@@ -79,8 +78,7 @@ export function Recommender({
   lockQuantId,
   minTps,
   excludedDevs,
-  onToggleDev,
-  onClearDevs,
+  onSetExcludedDevs,
 }: Props): JSX.Element {
   const allDevelopers = useMemo(() => {
     const set = new Set(models.map((m) => m.developer));
@@ -105,8 +103,7 @@ export function Recommender({
       <DeveloperFilter
         allDevelopers={allDevelopers}
         excludedDevs={excludedDevs}
-        onToggle={onToggleDev}
-        onClear={onClearDevs}
+        onSetExcluded={onSetExcludedDevs}
       />
 
       {/* Summary */}

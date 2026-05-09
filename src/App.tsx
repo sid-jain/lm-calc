@@ -152,8 +152,7 @@ export function App(): JSX.Element {
                 lockQuantId={isAutoQuant ? null : profile.quantId}
                 minTps={recommend.minTps}
                 excludedDevs={recommend.excludedDevs}
-                onToggleDev={(dev) => dispatch({ type: 'TOGGLE_RECOMMEND_DEV', dev })}
-                onClearDevs={() => dispatch({ type: 'CLEAR_RECOMMEND_DEVS' })}
+                onSetExcludedDevs={(devs) => dispatch({ type: 'SET_EXCLUDED_DEVS', devs })}
               />
             </section>
           </main>

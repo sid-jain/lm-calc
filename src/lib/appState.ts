@@ -26,8 +26,7 @@ export type Action =
   | { type: 'SET_DEVICE'; deviceId: string }
   | { type: 'SET_CUSTOM_BANDWIDTH'; bw: number }
   | { type: 'SET_MIN_TPS'; minTps: number }
-  | { type: 'TOGGLE_RECOMMEND_DEV'; dev: string }
-  | { type: 'CLEAR_RECOMMEND_DEVS' };
+  | { type: 'SET_EXCLUDED_DEVS'; devs: string[] };
 
 export const INITIAL_STATE: AppState = {
   profile: {
@@ -43,10 +42,6 @@ export const INITIAL_STATE: AppState = {
   },
 };
 
-function toggleDev(devs: string[], dev: string): string[] {
-  return devs.includes(dev) ? devs.filter((d) => d !== dev) : [...devs, dev];
-}
-
 export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'SET_RAM':
@@ -61,15 +56,7 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, profile: { ...state.profile, customBandwidthGBps: action.bw } };
     case 'SET_MIN_TPS':
       return { ...state, recommend: { ...state.recommend, minTps: action.minTps } };
-    case 'TOGGLE_RECOMMEND_DEV':
-      return {
-        ...state,
-        recommend: {
-          ...state.recommend,
-          excludedDevs: toggleDev(state.recommend.excludedDevs, action.dev),
-        },
-      };
-    case 'CLEAR_RECOMMEND_DEVS':
-      return { ...state, recommend: { ...state.recommend, excludedDevs: [] } };
+    case 'SET_EXCLUDED_DEVS':
+      return { ...state, recommend: { ...state.recommend, excludedDevs: action.devs } };
   }
 }
