@@ -59,7 +59,7 @@ export function ModelRow({
           {kvQuantLabel && (
             <span
               title={`KV cache stored at ${kvQuantLabel} (${kvQuant.bytesPerElement.toFixed(4)} bytes/elem)`}
-              className="shrink-0 rounded border border-sky-300 bg-sky-50 px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-700 dark:border-sky-700/60 dark:bg-sky-950/40 dark:text-sky-300"
+              className="shrink-0 rounded border border-slate-300 bg-slate-50 px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300"
             >
               KV {kvQuantLabel}
             </span>
