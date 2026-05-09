@@ -36,9 +36,7 @@ export function DeveloperFilter({
           <button
             key={dev}
             type="button"
-            onClick={() =>
-              onSetExcluded(nextExcludedOnPillClick(dev, allDevelopers, excludedDevs))
-            }
+            onClick={() => onSetExcluded(nextExcludedOnPillClick(dev, allDevelopers, excludedDevs))}
             aria-pressed={active}
             className={active ? PILL_ACTIVE : PILL_INACTIVE}
           >

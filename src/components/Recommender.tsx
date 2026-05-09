@@ -55,16 +55,14 @@ export function Recommender({
         />
 
         <div className="border-b border-slate-200 px-3 py-2 text-sm text-slate-600 dark:border-slate-800 dark:text-slate-400">
-          <span className="font-semibold text-slate-900 dark:text-slate-100">
-            {matches.length}
-          </span>{' '}
+          <span className="font-semibold text-slate-900 dark:text-slate-100">{matches.length}</span>{' '}
           {matches.length === 1 ? 'model meets' : 'models meet'} your constraints
         </div>
 
         {matches.length === 0 ? (
           <div className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
-            No models meet these constraints. Try raising RAM, lowering min tok/s, or allowing
-            lower quants.
+            No models meet these constraints. Try raising RAM, lowering min tok/s, or allowing lower
+            quants.
           </div>
         ) : (
           <ul>

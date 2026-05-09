@@ -72,7 +72,8 @@ export function ModelDetails({ model, quant, contextLen, estimate, speed }: Prop
           </span>
         </div>
         <div>
-          Attn: <span className="text-slate-700 dark:text-slate-300">{model.arch.attentionType}</span>
+          Attn:{' '}
+          <span className="text-slate-700 dark:text-slate-300">{model.arch.attentionType}</span>
           {model.arch.attentionType === 'mixed' &&
             ` (${(model.arch.fullAttentionRatio ?? 0) * 100}% full, sw=${model.arch.slidingWindowSize})`}
         </div>

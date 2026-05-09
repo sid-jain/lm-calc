@@ -31,7 +31,9 @@ export function RowShell({
     ? 'border-b border-slate-100 last:border-b-0 dark:border-slate-800/60'
     : 'border-b border-slate-200 last:border-b-0 dark:border-slate-800';
   const nameTone = muted ? 'text-slate-600 dark:text-slate-400' : '';
-  const devTone = muted ? 'text-slate-400 dark:text-slate-500' : 'text-slate-500 dark:text-slate-400';
+  const devTone = muted
+    ? 'text-slate-400 dark:text-slate-500'
+    : 'text-slate-500 dark:text-slate-400';
   return (
     <li className={liBorder}>
       <button
