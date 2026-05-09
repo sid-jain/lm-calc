@@ -33,6 +33,59 @@ npm run build        # type-check + production bundle (must pass)
 
 All four commands must pass before you open a PR. No CLA.
 
+## Releasing
+
+Maintainers and agents: follow these steps exactly. The project is pre-1.0 alpha; every release is a GitHub pre-release.
+
+### 1. Pick the version
+
+We follow semver, scoped to the `0.x.y-alpha` line:
+
+| Change                                                                | Bump                  |
+| --------------------------------------------------------------------- | --------------------- |
+| New user-visible feature, new control, methodology change             | **minor** (`0.X.0`)   |
+| Bug fix, doc-only change, refactor, internal-only test additions      | **patch** (`0.x.Y`)   |
+| Breaking change to the URL contract or to the public methodology math | minor; flag in commit |
+
+When in doubt: if a user reading the release notes would care about it, bump minor.
+
+### 2. Bump the version in source
+
+Edit `package.json` (one occurrence) and `package-lock.json` (three occurrences — one top-level, one under `packages."".version`, plus the `name` block — `replace_all` works) to the new version. Then verify:
+
+```bash
+grep -n "\"version\":" package.json package-lock.json
+# Should show only the new version, no stale references.
+```
+
+### 3. Commit, tag, push, release
+
+The four steps run as three commands. The commit message is always `Bump to X.Y.Z-alpha`. The tag is annotated, prefixed with `v`, and matches the version exactly.
+
+```bash
+# Commit the bump (pre-commit hook runs format check + lint).
+git add package.json package-lock.json
+git commit -m "Bump to 0.7.0-alpha"
+
+# Annotated tag, message identical to the tag name.
+git tag -a v0.7.0-alpha -m "v0.7.0-alpha"
+
+# Push commits + tag in one shot. The pre-push hook runs the full CI
+# (format / lint / test / build) and refuses to push if anything fails.
+git push --follow-tags
+
+# Create the GitHub pre-release. Notes are auto-generated from commit
+# messages since the previous tag — write good commit messages above.
+gh release create v0.7.0-alpha --prerelease --generate-notes
+```
+
+### Don't
+
+- Don't write custom release notes. `--generate-notes` reads from commit messages; if the notes look wrong, the commit messages were wrong.
+- Don't create a release without a tag, or a tag without pushing it. `git push --follow-tags` enforces both.
+- Don't drop the `--prerelease` flag until we're past 1.0. The "Latest" badge on GitHub Releases is reserved for stable.
+- Don't skip hooks (`--no-verify`). If a hook fails, fix the underlying issue.
+
 ## Scope
 
 Welcome:
