@@ -5,9 +5,9 @@ import { Recommender } from './components/Recommender';
 import { INITIAL_STATE, reducer } from './lib/appState';
 import { DEFAULT_DEVICE_ID, DEFAULT_QUANT_ID } from './lib/config';
 import { DEVICES, CUSTOM_DEVICE_ID } from './lib/devices';
-import { AUTO_KV_QUANT, AUTO_KV_QUANT_ID, resolveKvCacheQuant } from './lib/kvCacheQuants';
+import { AUTO_KV_QUANT, isAutoKvQuantId, resolveKvCacheQuant } from './lib/kvCacheQuants';
 import { models } from './lib/loadModels';
-import { AUTO_QUANT, AUTO_QUANT_ID, QUANT_LEVELS } from './lib/quants';
+import { AUTO_QUANT, QUANT_LEVELS, isAutoQuantId } from './lib/quants';
 import { deserialize, readUrlParams, writeUrlParams } from './lib/urlSync';
 import { useTheme } from './lib/useTheme';
 
@@ -37,12 +37,11 @@ export function App(): JSX.Element {
 
   const { profile, recommend } = state;
 
-  const isAutoQuant = profile.quantId === AUTO_QUANT_ID;
+  const isAutoQuant = isAutoQuantId(profile.quantId);
   const resolvedQuant =
     QUANT_LEVELS.find((q) => q.id === (isAutoQuant ? DEFAULT_QUANT_ID : profile.quantId)) ??
     QUANT_LEVELS[5];
-  const isAutoKvQuant = profile.kvCacheQuantId === AUTO_KV_QUANT_ID;
-  const resolvedKvQuant = isAutoKvQuant
+  const resolvedKvQuant = isAutoKvQuantId(profile.kvCacheQuantId)
     ? AUTO_KV_QUANT
     : resolveKvCacheQuant(profile.kvCacheQuantId);
   const device =

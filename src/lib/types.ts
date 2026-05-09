@@ -29,6 +29,12 @@ export interface QuantLevel {
   id: string;
   name: string;
   bytesPerParam: number;
+  /**
+   * Approximate perplexity delta vs FP16, used by the recommender to rank
+   * (weight, kv) combinations. Rough rule-of-thumb values from llama.cpp
+   * benchmarks; relative ordering matters more than the absolutes.
+   */
+  qualityLoss: number;
   description: string;
 }
 
@@ -36,6 +42,8 @@ export interface KvCacheQuant {
   id: string;
   name: string;
   bytesPerElement: number;
+  /** See QuantLevel.qualityLoss. */
+  qualityLoss: number;
   description: string;
 }
 

@@ -3,7 +3,13 @@ import { compareWithin, type Row, type SortContext } from './sortRows';
 import { estimateMemory } from './memory';
 import type { Model } from './types';
 
-const Q4_K_M = { id: 'q4_k_m', name: 'Q4_K_M', bytesPerParam: 0.604, description: '' };
+const Q4_K_M = {
+  id: 'q4_k_m',
+  name: 'Q4_K_M',
+  bytesPerParam: 0.604,
+  qualityLoss: 0,
+  description: '',
+};
 const CTX: SortContext = { quant: Q4_K_M, contextLen: 8192, bandwidthGBps: 1000 };
 
 function makeRow(overrides: Partial<Model>): Row {

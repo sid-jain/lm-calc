@@ -1,4 +1,4 @@
-import type { AutoKvQuantSentinel, KvCacheQuant } from './types';
+import type { AutoKvQuantSentinel, KvCacheQuant, KvCacheQuantOption } from './types';
 
 // Bytes-per-element values come from llama.cpp's GGUF block layouts:
 //   FP16: 2 bytes plain
@@ -7,10 +7,15 @@ import type { AutoKvQuantSentinel, KvCacheQuant } from './types';
 // Per-token KV footprint = 2 (K + V) × kv_heads × head_dim × bytesPerElement × layers
 // for standard attention, or (kv_lora_rank + qk_rope_head_dim) × bytesPerElement × layers
 // for MLA.
+//
+// qualityLoss values: FP16 is the lossless reference; Q8_0 is near-lossless;
+// Q4_0 has measurable quality cost especially on K-cache. Used by the recommender
+// to score (weight, kv) combos.
 const FP16: KvCacheQuant = {
   id: 'fp16',
   name: 'FP16',
   bytesPerElement: 2.0,
+  qualityLoss: 0,
   description: 'Full half-precision KV cache (largest, lossless)',
 };
 
@@ -18,6 +23,7 @@ const Q8_0: KvCacheQuant = {
   id: 'q8_0',
   name: 'Q8_0',
   bytesPerElement: 1.0625,
+  qualityLoss: 0.005,
   description: '8-bit KV — near-lossless, ~1.9× smaller than FP16',
 };
 
@@ -25,6 +31,7 @@ const Q4_0: KvCacheQuant = {
   id: 'q4_0',
   name: 'Q4_0',
   bytesPerElement: 0.5625,
+  qualityLoss: 0.06,
   description: '4-bit KV — quality cost, ~3.5× smaller than FP16',
 };
 
@@ -53,4 +60,12 @@ export const DEFAULT_KV_CACHE_QUANT_ID = AUTO_KV_QUANT_ID;
 
 export function resolveKvCacheQuant(id: string | undefined): KvCacheQuant {
   return KV_CACHE_QUANT_LEVELS.find((q) => q.id === id) ?? DEFAULT_KV_CACHE_QUANT;
+}
+
+export function isAutoKvQuantId(id: string | undefined): boolean {
+  return id === undefined || id === AUTO_KV_QUANT_ID;
+}
+
+export function isAutoKvQuant(q: KvCacheQuantOption): q is AutoKvQuantSentinel {
+  return q.id === AUTO_KV_QUANT_ID;
 }

@@ -206,12 +206,12 @@ describe('recommend — KV cache quant', () => {
     expect(auto.matches[0].quant.id).toBe(omitted.matches[0].quant.id);
   });
 
-  test('auto KV downgrades to Q4 when FP16 KV would not fit', () => {
+  test('auto KV downgrades to Q4 when FP16 and Q8 KV both overflow', () => {
     // Llama 3.1 8B, lockQuantId=q4_k_m, 128K ctx, RAM=12 GB:
     //   FP16 KV: 4.85 + 17.18 + 0.5 ≈ 22.53 GB  (overflows 12 GB)
     //   Q8 KV:   4.85 +  9.13 + 0.5 ≈ 14.48 GB  (still overflows 12 GB)
-    //   Q4 KV:   4.85 +  4.83 + 0.5 ≈ 10.18 GB  (fits)
-    // Auto must pick Q4 KV (no Q8 KV intermediate).
+    //   Q4 KV:   4.85 +  4.83 + 0.5 ≈ 10.18 GB  (fits, joint loss 0.10)
+    // Joint-loss scoring enumerates all three and picks Q4 (the only one that fits).
     const { matches } = recommend([LLAMA_3_1_8B], QUANT_LEVELS, {
       ramGB: 12,
       minContextLen: 131072,
@@ -282,11 +282,10 @@ describe('recommend — KV cache quant', () => {
     expect(matches[0].kvQuant.id).toBe('q8_0');
   });
 
-  test('joint-loss scoring picks Q4_K_M+Q8 over Q3_K_M+FP16 for a 27B-class budget', () => {
-    // Reproduces the user-reported bug on Qwen 3.6 27B at 24 GB / 128K ctx, scaled
-    // to a Mixtral-8x7B-shaped fixture so we can exercise the same selection logic
-    // without adding a new model fixture. Use lockQuantId=null to let auto-weight
-    // run, and pick a budget where the relevant tier of weights only fits at Q8 KV.
+  test('joint-loss scoring picks Q4_K_M+Q8 over Q3_K_M+FP16 at a tight budget', () => {
+    // Same selection logic as the user-reported Qwen 3.6 27B / RTX 3090 Ti case,
+    // exercised against the existing Mixtral fixture (different arch, same shape:
+    // a budget where the higher weight tier only fits once KV drops to Q8).
     //
     // Mixtral 46.703B at 32K ctx (32 layers, 8 kv_heads, 128 head_dim):
     //   FP16 KV per token = 32 × 2 × 8 × 128 × 32768 × 2 / 1e9 = 4.295 GB

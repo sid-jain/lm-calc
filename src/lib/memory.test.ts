@@ -63,7 +63,13 @@ const GEMMA_2_9B: Model = {
 describe('weightsGB', () => {
   test('Llama 3.1 8B at FP16', () => {
     expect(
-      weightsGB(LLAMA_3_1_8B, { id: 'fp16', name: 'FP16', bytesPerParam: 2.0, description: '' }),
+      weightsGB(LLAMA_3_1_8B, {
+        id: 'fp16',
+        name: 'FP16',
+        bytesPerParam: 2.0,
+        qualityLoss: 0,
+        description: '',
+      }),
     ).toBeCloseTo(16.06, 6);
   });
   test('Llama 3.1 8B at Q4_K_M', () => {
@@ -72,6 +78,7 @@ describe('weightsGB', () => {
         id: 'q4_k_m',
         name: 'Q4_K_M',
         bytesPerParam: 0.604,
+        qualityLoss: 0,
         description: '',
       }),
     ).toBeCloseTo(4.85012, 6);
@@ -188,9 +195,9 @@ describe('kvCacheGB — hybrid-linear', () => {
 });
 
 describe('kvCacheGB — KV cache quantization', () => {
-  const FP16 = { id: 'fp16', name: 'FP16', bytesPerElement: 2.0, description: '' };
-  const Q8 = { id: 'q8_0', name: 'Q8_0', bytesPerElement: 1.0625, description: '' };
-  const Q4 = { id: 'q4_0', name: 'Q4_0', bytesPerElement: 0.5625, description: '' };
+  const FP16 = { id: 'fp16', name: 'FP16', bytesPerElement: 2.0, qualityLoss: 0, description: '' };
+  const Q8 = { id: 'q8_0', name: 'Q8_0', bytesPerElement: 1.0625, qualityLoss: 0, description: '' };
+  const Q4 = { id: 'q4_0', name: 'Q4_0', bytesPerElement: 0.5625, qualityLoss: 0, description: '' };
 
   test('default (no kvQuant arg) matches FP16 result', () => {
     const fp16 = kvCacheGB(LLAMA_3_1_8B, 8192, FP16);
@@ -226,7 +233,13 @@ describe('kvCacheGB — KV cache quantization', () => {
   });
 
   test('estimateMemory with Q4 KV: lower kvCacheGB and lower totalGB', () => {
-    const Q4_K_M = { id: 'q4_k_m', name: 'Q4_K_M', bytesPerParam: 0.604, description: '' };
+    const Q4_K_M = {
+      id: 'q4_k_m',
+      name: 'Q4_K_M',
+      bytesPerParam: 0.604,
+      qualityLoss: 0,
+      description: '',
+    };
     const fp16 = estimateMemory(LLAMA_3_1_8B, Q4_K_M, 131072);
     const withQ4Kv = estimateMemory(LLAMA_3_1_8B, Q4_K_M, 131072, Q4);
     // Weights identical, KV smaller, total smaller.
@@ -236,7 +249,13 @@ describe('kvCacheGB — KV cache quantization', () => {
   });
 
   test('decodeTokensPerSecond: lower KV bytes → faster decode', () => {
-    const Q4_K_M = { id: 'q4_k_m', name: 'Q4_K_M', bytesPerParam: 0.604, description: '' };
+    const Q4_K_M = {
+      id: 'q4_k_m',
+      name: 'Q4_K_M',
+      bytesPerParam: 0.604,
+      qualityLoss: 0,
+      description: '',
+    };
     const baseline = decodeTokensPerSecond(LLAMA_3_1_8B, Q4_K_M, 131072, 1000);
     const withQ4Kv = decodeTokensPerSecond(LLAMA_3_1_8B, Q4_K_M, 131072, 1000, Q4);
     expect(withQ4Kv.kvBytesPerToken).toBeLessThan(baseline.kvBytesPerToken);
@@ -248,7 +267,7 @@ describe('estimateMemory', () => {
   test('total equals sum of components', () => {
     const e = estimateMemory(
       LLAMA_3_1_8B,
-      { id: 'q4_k_m', name: '', bytesPerParam: 0.604, description: '' },
+      { id: 'q4_k_m', name: '', bytesPerParam: 0.604, qualityLoss: 0, description: '' },
       8192,
     );
     expect(e.totalGB).toBeCloseTo(e.weightsGB + e.kvCacheGB + e.overheadGB, 9);
@@ -256,7 +275,7 @@ describe('estimateMemory', () => {
   test('range brackets the estimate', () => {
     const e = estimateMemory(
       LLAMA_3_1_8B,
-      { id: 'fp16', name: '', bytesPerParam: 2.0, description: '' },
+      { id: 'fp16', name: '', bytesPerParam: 2.0, qualityLoss: 0, description: '' },
       8192,
     );
     expect(e.rangeGB.low).toBeLessThan(e.totalGB);
@@ -297,6 +316,7 @@ describe('MoE invariants', () => {
         id: 'q4_k_m',
         name: 'Q4_K_M',
         bytesPerParam: 0.604,
+        qualityLoss: 0,
         description: '',
       }),
     ).toBeCloseTo(28.208612, 6);
@@ -309,7 +329,13 @@ describe('MoE invariants', () => {
 });
 
 describe('decodeTokensPerSecond', () => {
-  const Q4_K_M = { id: 'q4_k_m', name: 'Q4_K_M', bytesPerParam: 0.604, description: '' };
+  const Q4_K_M = {
+    id: 'q4_k_m',
+    name: 'Q4_K_M',
+    bytesPerParam: 0.604,
+    qualityLoss: 0,
+    description: '',
+  };
 
   test('Llama 3.1 8B at Q4_K_M, 8K ctx, 1000 GB/s', () => {
     // bytesPerToken = active_params * bytesPerParam * 1e9 + kv_bytes
