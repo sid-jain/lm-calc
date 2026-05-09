@@ -1,11 +1,14 @@
 import type { AppState, Profile, RecommendState } from './appState';
 import { INITIAL_STATE } from './appState';
+import { DEVICES } from './devices';
 
 export function serialize(state: AppState): URLSearchParams {
   const p = new URLSearchParams();
 
   // Profile — always written so bookmarks are self-contained and survive default changes
-  p.set('ram', String(state.profile.ramGB));
+  const selectedDevice = DEVICES.find((d) => d.id === state.profile.deviceId);
+  const deviceHasFixedMemory = selectedDevice?.memoryGB !== undefined;
+  if (!deviceHasFixedMemory) p.set('ram', String(state.profile.ramGB));
   p.set('ctx', String(state.profile.contextLen));
   p.set('quant', state.profile.quantId);
   p.set('device', state.profile.deviceId);

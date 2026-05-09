@@ -29,7 +29,7 @@ describe('urlSync — round-trip', () => {
         ramGB: 64,
         contextLen: 32768,
         quantId: 'q6_k',
-        deviceId: 'rtx-4090',
+        deviceId: 'ddr5-dual',
         customBandwidthGBps: 500,
       },
     };
@@ -37,7 +37,15 @@ describe('urlSync — round-trip', () => {
     expect(result.profile.ramGB).toBe(64);
     expect(result.profile.contextLen).toBe(32768);
     expect(result.profile.quantId).toBe('q6_k');
-    expect(result.profile.deviceId).toBe('rtx-4090');
+    expect(result.profile.deviceId).toBe('ddr5-dual');
+  });
+
+  test('ram param is omitted when device has fixed memory', () => {
+    const state: AppState = {
+      ...INITIAL_STATE,
+      profile: { ...INITIAL_STATE.profile, deviceId: 'rtx-4090', ramGB: 64 },
+    };
+    expect(serialize(state).get('ram')).toBeNull();
   });
 
   test('custom device bw only serialized when deviceId=custom', () => {
