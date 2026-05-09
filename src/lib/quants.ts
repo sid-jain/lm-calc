@@ -1,11 +1,10 @@
-import type { QuantLevel } from './types';
+import type { AutoQuantSentinel, QuantLevel } from './types';
 
 export const AUTO_QUANT_ID = 'auto';
 
-export const AUTO_QUANT: QuantLevel = {
+export const AUTO_QUANT: AutoQuantSentinel = {
   id: AUTO_QUANT_ID,
   name: 'Recommend best quant',
-  bytesPerParam: 0,
   description: 'Picks the highest-quality weight quant that fits.',
 };
 

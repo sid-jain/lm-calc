@@ -39,6 +39,27 @@ export interface KvCacheQuant {
   description: string;
 }
 
+// "Recommend best …" sentinels for the Profile / Controls UI. Deliberately omit
+// the bytes-per-* field so they cannot be passed where math expects a real quant
+// — TypeScript will reject `kvCacheGB(model, ctx, AUTO_KV_QUANT)` at compile time.
+export interface AutoQuantSentinel {
+  id: 'auto';
+  name: string;
+  description: string;
+}
+
+export interface AutoKvQuantSentinel {
+  id: 'auto';
+  name: string;
+  description: string;
+}
+
+// Union types used by UI surfaces (Controls, App) where either the auto sentinel
+// or a concrete quant can flow through. The recommender output, ModelRow, and
+// memory functions all use the concrete types only.
+export type WeightQuantOption = QuantLevel | AutoQuantSentinel;
+export type KvCacheQuantOption = KvCacheQuant | AutoKvQuantSentinel;
+
 export interface MemoryEstimate {
   weightsGB: number;
   kvCacheGB: number;

@@ -3,20 +3,20 @@ import { CONTEXT_SNAPS, formatContext } from '../lib/contextSnaps';
 import { AUTO_KV_QUANT, AUTO_KV_QUANT_ID, KV_CACHE_QUANT_LEVELS } from '../lib/kvCacheQuants';
 import { AUTO_QUANT, AUTO_QUANT_ID, QUANT_LEVELS } from '../lib/quants';
 import { CATEGORY_LABELS, CUSTOM_DEVICE_ID, DEVICES, type Device } from '../lib/devices';
-import type { KvCacheQuant, QuantLevel } from '../lib/types';
+import type { KvCacheQuantOption, WeightQuantOption } from '../lib/types';
 
 interface Props {
   ramGB: number;
   contextLen: number;
-  quant: QuantLevel;
-  kvQuant: KvCacheQuant;
+  quant: WeightQuantOption;
+  kvQuant: KvCacheQuantOption;
   device: Device;
   customBandwidthGBps: number;
   minTps: number;
   onRamGB: (v: number) => void;
   onContextLen: (v: number) => void;
-  onQuant: (q: QuantLevel) => void;
-  onKvQuant: (q: KvCacheQuant) => void;
+  onQuant: (q: WeightQuantOption) => void;
+  onKvQuant: (q: KvCacheQuantOption) => void;
   onDevice: (d: Device) => void;
   onCustomBandwidth: (v: number) => void;
   onMinTps: (v: number) => void;

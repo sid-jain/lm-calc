@@ -1,4 +1,4 @@
-import type { KvCacheQuant } from './types';
+import type { AutoKvQuantSentinel, KvCacheQuant } from './types';
 
 // Bytes-per-element values come from llama.cpp's GGUF block layouts:
 //   FP16: 2 bytes plain
@@ -32,13 +32,13 @@ const Q4_0: KvCacheQuant = {
 export const KV_CACHE_QUANT_LEVELS: KvCacheQuant[] = [FP16, Q8_0, Q4_0];
 
 // Sentinel: when chosen, the recommender picks the highest-quality KV quant
-// that lets each model meet the memory and speed constraints. bytesPerElement=0
-// is a sentinel value — never used directly in arithmetic, only the id is checked.
+// that lets each model meet the memory and speed constraints. Typed as a
+// distinct sentinel (no bytesPerElement) so it can't be passed where memory
+// math expects a real KvCacheQuant — TypeScript will reject it at compile time.
 export const AUTO_KV_QUANT_ID = 'auto';
-export const AUTO_KV_QUANT: KvCacheQuant = {
+export const AUTO_KV_QUANT: AutoKvQuantSentinel = {
   id: AUTO_KV_QUANT_ID,
   name: 'Recommend best quant',
-  bytesPerElement: 0,
   description: 'Picks the highest-quality KV quant that fits.',
 };
 
