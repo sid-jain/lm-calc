@@ -4,41 +4,48 @@ import { fmtGB, fmtTpsRange } from '../lib/format';
 import { decodeTokensPerSecond, largestFittingQuant } from '../lib/memory';
 import { QUANT_LEVELS } from '../lib/quants';
 import { SPEED_STYLES, speedTier } from '../lib/speedTier';
-import type { MemoryEstimate, Model, QuantLevel } from '../lib/types';
+import type { KvCacheQuant, MemoryEstimate, Model, QuantLevel } from '../lib/types';
 import { RowShell } from './RowShell';
 
 interface Props {
   model: Model;
   quant: QuantLevel;
+  kvQuant: KvCacheQuant;
   contextLen: number;
   ramGB: number;
   bandwidthGBps: number;
   estimate: MemoryEstimate;
   quantLabel?: string;
+  kvQuantLabel?: string;
 }
 
 export function ModelRow({
   model,
   quant,
+  kvQuant,
   contextLen,
   ramGB,
   bandwidthGBps,
   estimate,
   quantLabel,
+  kvQuantLabel,
 }: Props): JSX.Element {
   const status = fitStatus(estimate.totalGB, ramGB);
   const fit = FIT_STYLES[status];
-  const speed = decodeTokensPerSecond(model, quant, contextLen, bandwidthGBps);
+  const speed = decodeTokensPerSecond(model, quant, contextLen, bandwidthGBps, kvQuant);
   const speedMid = (speed.lowTps + speed.highTps) / 2;
   const spd = SPEED_STYLES[speedTier(speedMid)];
   const ctxClamped = contextLen > model.arch.maxContext;
   const fallbackQuant =
-    status === 'over' ? largestFittingQuant(model, contextLen, ramGB, quant, QUANT_LEVELS) : null;
+    status === 'over'
+      ? largestFittingQuant(model, contextLen, ramGB, quant, QUANT_LEVELS, kvQuant)
+      : null;
 
   return (
     <RowShell
       model={model}
       quant={quant}
+      kvQuant={kvQuant}
       contextLen={contextLen}
       estimate={estimate}
       speed={speed}
@@ -47,6 +54,14 @@ export function ModelRow({
           {quantLabel && (
             <span className="shrink-0 rounded border border-slate-300 bg-slate-50 px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300">
               {quantLabel}
+            </span>
+          )}
+          {kvQuantLabel && (
+            <span
+              title={`KV cache stored at ${kvQuantLabel} (${kvQuant.bytesPerElement.toFixed(4)} bytes/elem)`}
+              className="shrink-0 rounded border border-sky-300 bg-sky-50 px-1 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-700 dark:border-sky-700/60 dark:bg-sky-950/40 dark:text-sky-300"
+            >
+              KV {kvQuantLabel}
             </span>
           )}
           {ctxClamped && (

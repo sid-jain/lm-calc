@@ -5,6 +5,7 @@ import { Recommender } from './components/Recommender';
 import { INITIAL_STATE, reducer } from './lib/appState';
 import { DEFAULT_DEVICE_ID, DEFAULT_QUANT_ID } from './lib/config';
 import { DEVICES, CUSTOM_DEVICE_ID } from './lib/devices';
+import { AUTO_KV_QUANT, AUTO_KV_QUANT_ID, resolveKvCacheQuant } from './lib/kvCacheQuants';
 import { models } from './lib/loadModels';
 import { AUTO_QUANT, AUTO_QUANT_ID, QUANT_LEVELS } from './lib/quants';
 import { deserialize, readUrlParams, writeUrlParams } from './lib/urlSync';
@@ -40,6 +41,10 @@ export function App(): JSX.Element {
   const resolvedQuant =
     QUANT_LEVELS.find((q) => q.id === (isAutoQuant ? DEFAULT_QUANT_ID : profile.quantId)) ??
     QUANT_LEVELS[5];
+  const isAutoKvQuant = profile.kvCacheQuantId === AUTO_KV_QUANT_ID;
+  const resolvedKvQuant = isAutoKvQuant
+    ? AUTO_KV_QUANT
+    : resolveKvCacheQuant(profile.kvCacheQuantId);
   const device =
     profile.deviceId === CUSTOM_DEVICE_ID
       ? {
@@ -124,12 +129,14 @@ export function App(): JSX.Element {
               ramGB={profile.ramGB}
               contextLen={profile.contextLen}
               quant={isAutoQuant ? AUTO_QUANT : resolvedQuant}
+              kvQuant={resolvedKvQuant}
               device={device}
               customBandwidthGBps={profile.customBandwidthGBps}
               minTps={recommend.minTps}
               onRamGB={(v) => dispatch({ type: 'SET_RAM', ramGB: v })}
               onContextLen={(v) => dispatch({ type: 'SET_CONTEXT', contextLen: v })}
               onQuant={(q) => dispatch({ type: 'SET_QUANT', quantId: q.id })}
+              onKvQuant={(q) => dispatch({ type: 'SET_KV_CACHE_QUANT', kvCacheQuantId: q.id })}
               onDevice={(d) => {
                 dispatch({ type: 'SET_DEVICE', deviceId: d.id });
                 if (d.id === CUSTOM_DEVICE_ID) {
@@ -150,6 +157,7 @@ export function App(): JSX.Element {
                 contextLen={profile.contextLen}
                 bandwidthGBps={bandwidthGBps}
                 lockQuantId={isAutoQuant ? null : profile.quantId}
+                kvCacheQuantId={profile.kvCacheQuantId}
                 minTps={recommend.minTps}
                 excludedDevs={recommend.excludedDevs}
                 onSetExcludedDevs={(devs) => dispatch({ type: 'SET_EXCLUDED_DEVS', devs })}

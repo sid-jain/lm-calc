@@ -12,6 +12,7 @@ interface Props {
   contextLen: number;
   bandwidthGBps: number;
   lockQuantId: string | null;
+  kvCacheQuantId: string;
   minTps: number;
   excludedDevs: string[];
   onSetExcludedDevs: (devs: string[]) => void;
@@ -23,6 +24,7 @@ export function Recommender({
   contextLen,
   bandwidthGBps,
   lockQuantId,
+  kvCacheQuantId,
   minTps,
   excludedDevs,
   onSetExcludedDevs,
@@ -40,9 +42,10 @@ export function Recommender({
         minTps,
         bandwidthGBps,
         lockQuantId,
+        kvCacheQuantId,
         excludedDevs: new Set(excludedDevs),
       }),
-    [models, ramGB, contextLen, minTps, bandwidthGBps, lockQuantId, excludedDevs],
+    [models, ramGB, contextLen, minTps, bandwidthGBps, lockQuantId, kvCacheQuantId, excludedDevs],
   );
 
   return (
@@ -66,16 +69,18 @@ export function Recommender({
           </div>
         ) : (
           <ul>
-            {matches.map(({ model, quant: recQuant, estimate }) => (
+            {matches.map(({ model, quant: recQuant, kvQuant, estimate }) => (
               <ModelRow
                 key={model.id}
                 model={model}
                 quant={recQuant}
+                kvQuant={kvQuant}
                 contextLen={contextLen}
                 ramGB={ramGB}
                 bandwidthGBps={bandwidthGBps}
                 estimate={estimate}
                 quantLabel={recQuant.name}
+                kvQuantLabel={kvQuant.name}
               />
             ))}
           </ul>
@@ -95,6 +100,7 @@ export function Recommender({
                 contextLen={contextLen}
                 bandwidthGBps={bandwidthGBps}
                 lockQuantId={lockQuantId}
+                kvCacheQuantId={kvCacheQuantId}
               />
             ))}
           </ul>

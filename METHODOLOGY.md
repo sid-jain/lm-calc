@@ -9,9 +9,9 @@ total = weights + kv_cache + framework_overhead
 ```
 
 - **Weights** = `params × bytes_per_param` (quantization byte averages from llama.cpp). For MoE models (Mixtral, Qwen 3 -A\* variants) `params` is the **total** count — all experts must be in memory for inference.
-- **KV cache** = `2 × kv_heads × head_dim × ctx × 2 bytes × layers` at FP16.
+- **KV cache** = `2 × kv_heads × head_dim × ctx × bytes_per_kv_element × layers`. The KV cache quant control sets `bytes_per_kv_element`: `FP16` = 2.0 (lossless), `Q8_0` = 1.0625 (~1.9× smaller, near-lossless), `Q4_0` = 0.5625 (~3.5× smaller, noticeable quality cost — especially on K). With **Recommend best KV cache quant** (the default), the recommender enumerates every `(weight, kv)` combination that fits and picks the lowest **joint quality loss** — using rough perplexity deltas from llama.cpp benchmarks (e.g. `Q4_K_M` weights + `Q8_0` KV ≈ 0.045 loss beats `Q3_K_M` weights + `FP16` KV ≈ 0.15, because the `Q4` → `Q3` weight cliff is much steeper than `FP16` → `Q8` KV). The chosen value is shown as a badge on each row. Engines like llama.cpp expose this via `--cache-type-k`/`--cache-type-v`.
   - Mixed-attention models (Gemma 2/3) use `min(ctx, sliding_window)` for sliding layers.
-  - **MLA** models (DeepSeek V3, Kimi K2, Moonlight) store a compressed latent + small rope cache: `(kv_lora_rank + qk_rope_head_dim) × 2 bytes × layers × ctx` — typically ~30× smaller than naive GQA.
+  - **MLA** models (DeepSeek V3, Kimi K2, Moonlight) store a compressed latent + small rope cache: `(kv_lora_rank + qk_rope_head_dim) × bytes_per_kv_element × layers × ctx` — typically ~30× smaller than naive GQA.
   - **Hybrid-linear** models (Qwen 3.6) interleave full-attention and linear-attention layers; only the full-attention layers contribute to the KV cache.
 - **Framework overhead** = a flat 0.5 GB.
 

@@ -29,6 +29,7 @@ describe('urlSync — round-trip', () => {
         ramGB: 64,
         contextLen: 32768,
         quantId: 'q6_k',
+        kvCacheQuantId: 'q8_0',
         deviceId: 'ddr5-dual',
         customBandwidthGBps: 500,
       },
@@ -37,7 +38,31 @@ describe('urlSync — round-trip', () => {
     expect(result.profile.ramGB).toBe(64);
     expect(result.profile.contextLen).toBe(32768);
     expect(result.profile.quantId).toBe('q6_k');
+    expect(result.profile.kvCacheQuantId).toBe('q8_0');
     expect(result.profile.deviceId).toBe('ddr5-dual');
+  });
+
+  test('default (auto) kvCacheQuantId is omitted from URL', () => {
+    expect(serialize(INITIAL_STATE).get('kvq')).toBeNull();
+  });
+
+  test('non-default kvCacheQuantId round-trips via kvq param', () => {
+    const state: AppState = {
+      ...INITIAL_STATE,
+      profile: { ...INITIAL_STATE.profile, kvCacheQuantId: 'q4_0' },
+    };
+    expect(serialize(state).get('kvq')).toBe('q4_0');
+    expect(roundTrip(state).profile.kvCacheQuantId).toBe('q4_0');
+  });
+
+  test('explicit fp16 (now non-default) is preserved in URL', () => {
+    // Now that auto is the default, an explicit FP16 selection must serialize.
+    const state: AppState = {
+      ...INITIAL_STATE,
+      profile: { ...INITIAL_STATE.profile, kvCacheQuantId: 'fp16' },
+    };
+    expect(serialize(state).get('kvq')).toBe('fp16');
+    expect(roundTrip(state).profile.kvCacheQuantId).toBe('fp16');
   });
 
   test('ram param is omitted when device has fixed memory', () => {

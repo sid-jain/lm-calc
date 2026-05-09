@@ -1,16 +1,24 @@
 import { formatContext } from '../lib/contextSnaps';
 import { fmtBytes, fmtGB, fmtTpsRange } from '../lib/format';
-import type { MemoryEstimate, Model, QuantLevel, SpeedEstimate } from '../lib/types';
+import type { KvCacheQuant, MemoryEstimate, Model, QuantLevel, SpeedEstimate } from '../lib/types';
 
 interface Props {
   model: Model;
   quant: QuantLevel;
+  kvQuant: KvCacheQuant;
   contextLen: number;
   estimate: MemoryEstimate;
   speed: SpeedEstimate;
 }
 
-export function ModelDetails({ model, quant, contextLen, estimate, speed }: Props): JSX.Element {
+export function ModelDetails({
+  model,
+  quant,
+  kvQuant,
+  contextLen,
+  estimate,
+  speed,
+}: Props): JSX.Element {
   const ctxClamped = contextLen > model.arch.maxContext;
   return (
     <div className="border-t border-slate-100 bg-slate-50 px-3 py-3 text-sm dark:border-slate-800 dark:bg-slate-900/40">
@@ -85,8 +93,9 @@ export function ModelDetails({ model, quant, contextLen, estimate, speed }: Prop
         </div>
       </div>
       <div className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-        Quant: {quant.name} ({quant.bytesPerParam} bytes/param) · KV at FP16 · decode is
-        bandwidth-bound, range applies a 0.50–0.85× efficiency factor
+        Quant: {quant.name} ({quant.bytesPerParam.toFixed(4)} bytes/param) · KV at {kvQuant.name} (
+        {kvQuant.bytesPerElement.toFixed(4)} bytes/elem) · decode is bandwidth-bound, range applies
+        a 0.50–0.85× efficiency factor
       </div>
       {ctxClamped && (
         <div className="mt-2 text-xs text-amber-700 dark:text-amber-400">

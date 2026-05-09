@@ -1,4 +1,5 @@
-import type { Model, QuantLevel, MemoryEstimate, SpeedEstimate } from './types';
+import { DEFAULT_KV_CACHE_QUANT } from './kvCacheQuants';
+import type { KvCacheQuant, Model, QuantLevel, MemoryEstimate, SpeedEstimate } from './types';
 
 const FRAMEWORK_OVERHEAD_GB = 0.5;
 const ESTIMATE_LOW_FACTOR = 0.95;
@@ -10,8 +11,11 @@ export function weightsGB(model: Model, quant: QuantLevel): number {
   return model.params * quant.bytesPerParam;
 }
 
-export function kvCacheGB(model: Model, contextLen: number): number {
+// kvQuant defaults to FP16 to preserve the historical hard-coded behavior for any
+// callsite that hasn't been threaded through yet.
+export function kvCacheGB(model: Model, contextLen: number, kvQuant?: KvCacheQuant): number {
   const ctx = Math.min(contextLen, model.arch.maxContext);
+  const bpe = (kvQuant ?? DEFAULT_KV_CACHE_QUANT).bytesPerElement;
   const {
     layers,
     kvHeads,
@@ -25,12 +29,13 @@ export function kvCacheGB(model: Model, contextLen: number): number {
 
   if (attentionType === 'mla') {
     // MLA stores a compressed KV latent + a rope-K cache, shared across all heads (per layer).
-    // Per token per layer: (kv_lora_rank + qk_rope_head_dim) × 2 bytes (FP16).
-    const perTokenPerLayer = ((kvLoraRank ?? 0) + (qkRopeHeadDim ?? 0)) * 2;
+    // Per token per layer: (kv_lora_rank + qk_rope_head_dim) × bytesPerElement.
+    const perTokenPerLayer = ((kvLoraRank ?? 0) + (qkRopeHeadDim ?? 0)) * bpe;
     return (layers * perTokenPerLayer * ctx) / 1e9;
   }
 
-  const bytesPerLayerAt = (c: number) => 2 * kvHeads * headDim * c * 2;
+  // Standard KV: 2 (K + V) × kv_heads × head_dim × ctx × bytesPerElement.
+  const bytesPerLayerAt = (c: number) => 2 * kvHeads * headDim * c * bpe;
 
   if (attentionType === 'mixed') {
     const fullLayers = Math.round(layers * (fullAttentionRatio ?? 0));
@@ -56,11 +61,12 @@ export function decodeTokensPerSecond(
   quant: QuantLevel,
   contextLen: number,
   bandwidthGBps: number,
+  kvQuant?: KvCacheQuant,
 ): SpeedEstimate {
   const activeParams =
     model.isMoE && model.activeParams !== null ? model.activeParams : model.params;
   const weightBytesPerToken = activeParams * quant.bytesPerParam * 1e9;
-  const kvBytesPerToken = kvCacheGB(model, contextLen) * 1e9;
+  const kvBytesPerToken = kvCacheGB(model, contextLen, kvQuant) * 1e9;
   const bytesPerToken = weightBytesPerToken + kvBytesPerToken;
   const theoreticalTps = (bandwidthGBps * 1e9) / bytesPerToken;
   return {
@@ -83,10 +89,11 @@ export function largestFittingQuant(
   ramGB: number,
   current: QuantLevel,
   quants: QuantLevel[],
+  kvQuant?: KvCacheQuant,
 ): QuantLevel | null {
   for (const q of quants) {
     if (q.bytesPerParam >= current.bytesPerParam) continue;
-    if (estimateMemory(model, q, contextLen).totalGB <= ramGB) return q;
+    if (estimateMemory(model, q, contextLen, kvQuant).totalGB <= ramGB) return q;
   }
   return null;
 }
@@ -95,9 +102,10 @@ export function estimateMemory(
   model: Model,
   quant: QuantLevel,
   contextLen: number,
+  kvQuant?: KvCacheQuant,
 ): MemoryEstimate {
   const weights = weightsGB(model, quant);
-  const kv = kvCacheGB(model, contextLen);
+  const kv = kvCacheGB(model, contextLen, kvQuant);
   const overhead = FRAMEWORK_OVERHEAD_GB;
   const total = weights + kv + overhead;
   return {

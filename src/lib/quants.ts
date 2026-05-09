@@ -6,7 +6,7 @@ export const AUTO_QUANT: QuantLevel = {
   id: AUTO_QUANT_ID,
   name: 'Recommend best quant',
   bytesPerParam: 0,
-  description: 'Picks the highest-quality quant that fits.',
+  description: 'Picks the highest-quality weight quant that fits.',
 };
 
 export const QUANT_LEVELS: QuantLevel[] = [

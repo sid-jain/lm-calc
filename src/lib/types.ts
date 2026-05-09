@@ -32,6 +32,13 @@ export interface QuantLevel {
   description: string;
 }
 
+export interface KvCacheQuant {
+  id: string;
+  name: string;
+  bytesPerElement: number;
+  description: string;
+}
+
 export interface MemoryEstimate {
   weightsGB: number;
   kvCacheGB: number;

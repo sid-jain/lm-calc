@@ -1,6 +1,7 @@
 import type { AppState, Profile, RecommendState } from './appState';
 import { INITIAL_STATE } from './appState';
 import { DEVICES } from './devices';
+import { DEFAULT_KV_CACHE_QUANT_ID } from './kvCacheQuants';
 
 export function serialize(state: AppState): URLSearchParams {
   const p = new URLSearchParams();
@@ -11,6 +12,10 @@ export function serialize(state: AppState): URLSearchParams {
   if (!deviceHasFixedMemory) p.set('ram', String(state.profile.ramGB));
   p.set('ctx', String(state.profile.contextLen));
   p.set('quant', state.profile.quantId);
+  // KV cache quant: omit the default to keep URLs clean. Anything else round-trips.
+  if (state.profile.kvCacheQuantId !== DEFAULT_KV_CACHE_QUANT_ID) {
+    p.set('kvq', state.profile.kvCacheQuantId);
+  }
   p.set('device', state.profile.deviceId);
   if (state.profile.deviceId === 'custom') p.set('bw', String(state.profile.customBandwidthGBps));
 
@@ -35,6 +40,8 @@ export function deserialize(params: URLSearchParams): Partial<AppState> {
   if (Number.isFinite(ctx) && ctx > 0) profile.contextLen = ctx;
   const quant = params.get('quant');
   if (quant) profile.quantId = quant;
+  const kvq = params.get('kvq');
+  if (kvq) profile.kvCacheQuantId = kvq;
   const device = params.get('device');
   if (device) profile.deviceId = device;
   const bw = Number(params.get('bw'));

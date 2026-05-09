@@ -1,19 +1,22 @@
 import { useEffect, useState } from 'react';
 import { CONTEXT_SNAPS, formatContext } from '../lib/contextSnaps';
+import { AUTO_KV_QUANT, AUTO_KV_QUANT_ID, KV_CACHE_QUANT_LEVELS } from '../lib/kvCacheQuants';
 import { AUTO_QUANT, AUTO_QUANT_ID, QUANT_LEVELS } from '../lib/quants';
 import { CATEGORY_LABELS, CUSTOM_DEVICE_ID, DEVICES, type Device } from '../lib/devices';
-import type { QuantLevel } from '../lib/types';
+import type { KvCacheQuant, QuantLevel } from '../lib/types';
 
 interface Props {
   ramGB: number;
   contextLen: number;
   quant: QuantLevel;
+  kvQuant: KvCacheQuant;
   device: Device;
   customBandwidthGBps: number;
   minTps: number;
   onRamGB: (v: number) => void;
   onContextLen: (v: number) => void;
   onQuant: (q: QuantLevel) => void;
+  onKvQuant: (q: KvCacheQuant) => void;
   onDevice: (d: Device) => void;
   onCustomBandwidth: (v: number) => void;
   onMinTps: (v: number) => void;
@@ -34,12 +37,14 @@ export function Controls({
   ramGB,
   contextLen,
   quant,
+  kvQuant,
   device,
   customBandwidthGBps,
   minTps,
   onRamGB,
   onContextLen,
   onQuant,
+  onKvQuant,
   onDevice,
   onCustomBandwidth,
   onMinTps,
@@ -173,11 +178,12 @@ export function Controls({
         </div>
       </section>
 
-      {/* Row 2 — workload: context, min speed, quant */}
+      {/* Row 2 — workload: context, min speed, weight quant, KV quant.
+          Four cards wrap 2 per row on md+ so the quant selects + descriptions stay readable. */}
       <section>
         <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">Workload</h3>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-10">
-          <div className="rounded-lg border border-slate-200 p-4 md:col-span-3 dark:border-slate-800">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
             <label
               htmlFor="ctx-select"
               className="block text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400"
@@ -201,7 +207,7 @@ export function Controls({
             </p>
           </div>
 
-          <div className="rounded-lg border border-slate-200 p-4 md:col-span-3 dark:border-slate-800">
+          <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
             <label
               htmlFor="min-tps"
               className="block text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400"
@@ -229,12 +235,12 @@ export function Controls({
             </p>
           </div>
 
-          <div className="rounded-lg border border-slate-200 p-4 md:col-span-4 dark:border-slate-800">
+          <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
             <label
               htmlFor="quant-select"
               className="block text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400"
             >
-              Quantization
+              Weight quant
             </label>
             <select
               id="quant-select"
@@ -259,6 +265,38 @@ export function Controls({
               ))}
             </select>
             <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{quant.description}</p>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+            <label
+              htmlFor="kv-quant-select"
+              className="block text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400"
+            >
+              KV cache quant
+            </label>
+            <select
+              id="kv-quant-select"
+              value={kvQuant.id}
+              onChange={(e) => {
+                const id = e.target.value;
+                if (id === AUTO_KV_QUANT_ID) {
+                  onKvQuant(AUTO_KV_QUANT);
+                  return;
+                }
+                const next = KV_CACHE_QUANT_LEVELS.find((q) => q.id === id);
+                if (next) onKvQuant(next);
+              }}
+              className="mt-2 h-11 w-full rounded border border-slate-300 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 px-3 text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-slate-700"
+            >
+              <option value={AUTO_KV_QUANT_ID}>{AUTO_KV_QUANT.name}</option>
+              <option disabled>──────────</option>
+              {KV_CACHE_QUANT_LEVELS.map((q) => (
+                <option key={q.id} value={q.id}>
+                  {q.name}
+                </option>
+              ))}
+            </select>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{kvQuant.description}</p>
           </div>
         </div>
       </section>

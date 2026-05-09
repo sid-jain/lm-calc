@@ -1,10 +1,11 @@
 import { type ReactNode, useState } from 'react';
-import type { MemoryEstimate, Model, QuantLevel, SpeedEstimate } from '../lib/types';
+import type { KvCacheQuant, MemoryEstimate, Model, QuantLevel, SpeedEstimate } from '../lib/types';
 import { ModelDetails } from './ModelDetails';
 
 interface Props {
   model: Model;
   quant: QuantLevel;
+  kvQuant: KvCacheQuant;
   contextLen: number;
   estimate: MemoryEstimate;
   speed: SpeedEstimate;
@@ -19,6 +20,7 @@ interface Props {
 export function RowShell({
   model,
   quant,
+  kvQuant,
   contextLen,
   estimate,
   speed,
@@ -63,6 +65,7 @@ export function RowShell({
         <ModelDetails
           model={model}
           quant={quant}
+          kvQuant={kvQuant}
           contextLen={contextLen}
           estimate={estimate}
           speed={speed}

@@ -12,20 +12,21 @@ Which open-weight LLMs will actually run on your hardware, and at which quant? T
 
 ### Constraints (inputs)
 
-| Control            | What it sets                                                                                                                  |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| **Available RAM**  | VRAM or unified-memory budget in GB                                                                                           |
-| **Context length** | Required token context; models that don't support it are filtered out                                                         |
-| **Min speed**      | Minimum acceptable decode rate (tok/s); models that can't reach it are filtered out                                           |
-| **Quantization**   | _Recommend best quant_ (default) lets the engine pick; selecting a specific quant locks every result to that quant            |
-| **Device**         | Sets memory bandwidth used for speed estimation; pick from common Apple, Nvidia, and DDR presets or enter a custom GB/s value |
-| **Developers**     | Pill filter to include or exclude specific model families                                                                     |
+| Control            | What it sets                                                                                                                                                     |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Available RAM**  | VRAM or unified-memory budget in GB                                                                                                                              |
+| **Context length** | Required token context; models that don't support it are filtered out                                                                                            |
+| **Min speed**      | Minimum acceptable decode rate (tok/s); models that can't reach it are filtered out                                                                              |
+| **Weight quant**   | _Recommend best quant_ (default) lets the engine pick; selecting a specific quant locks every result to that quant                                               |
+| **KV cache quant** | _Recommend best KV cache quant_ (default) enumerates every (weight, KV) pair and picks the lowest joint quality loss; selecting a specific value locks every row |
+| **Device**         | Sets memory bandwidth used for speed estimation; pick from common Apple, Nvidia, and DDR presets or enter a custom GB/s value                                    |
+| **Developers**     | Pill filter to include or exclude specific model families                                                                                                        |
 
 ### Results (outputs)
 
 **Matched models** — ranked by a composite score that prefers higher quant quality, then higher speed, then larger parameter count. Each row shows:
 
-- Recommended quant badge (the highest-quality quant that satisfies all constraints)
+- Recommended weight + KV cache quant badges (the highest-quality combo that satisfies all constraints)
 - Memory range (weights + KV cache + overhead, ×0.95 – ×1.20 of point estimate)
 - Decode speed range (×0.50 – ×0.85 of theoretical maximum)
 - Click to expand: full memory breakdown, architectural details, HuggingFace link

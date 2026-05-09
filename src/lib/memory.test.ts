@@ -1,5 +1,13 @@
 import { describe, expect, test } from 'vitest';
-import { weightsGB, kvCacheGB, estimateMemory, decodeTokensPerSecond } from './memory';
+import { resolveKvCacheQuant } from './kvCacheQuants';
+import {
+  weightsGB,
+  kvCacheGB,
+  estimateMemory,
+  decodeTokensPerSecond,
+  largestFittingQuant,
+} from './memory';
+import { QUANT_LEVELS } from './quants';
 import type { Model } from './types';
 
 const LLAMA_3_1_8B: Model = {
@@ -179,6 +187,63 @@ describe('kvCacheGB — hybrid-linear', () => {
   });
 });
 
+describe('kvCacheGB — KV cache quantization', () => {
+  const FP16 = { id: 'fp16', name: 'FP16', bytesPerElement: 2.0, description: '' };
+  const Q8 = { id: 'q8_0', name: 'Q8_0', bytesPerElement: 1.0625, description: '' };
+  const Q4 = { id: 'q4_0', name: 'Q4_0', bytesPerElement: 0.5625, description: '' };
+
+  test('default (no kvQuant arg) matches FP16 result', () => {
+    const fp16 = kvCacheGB(LLAMA_3_1_8B, 8192, FP16);
+    const dflt = kvCacheGB(LLAMA_3_1_8B, 8192);
+    expect(dflt).toBeCloseTo(fp16, 9);
+  });
+
+  test('GQA: Q8 KV is ~2× smaller than FP16, Q4 is ~3.5× smaller', () => {
+    const fp16 = kvCacheGB(LLAMA_3_1_8B, 131072, FP16);
+    const q8 = kvCacheGB(LLAMA_3_1_8B, 131072, Q8);
+    const q4 = kvCacheGB(LLAMA_3_1_8B, 131072, Q4);
+    // bytesPerElement ratios: 2 / 1.0625 ≈ 1.882, 2 / 0.5625 ≈ 3.556
+    expect(fp16 / q8).toBeCloseTo(2 / 1.0625, 6);
+    expect(fp16 / q4).toBeCloseTo(2 / 0.5625, 6);
+  });
+
+  test('GQA Q4 explicit number: Llama 3.1 8B at 8192 ctx', () => {
+    // 32 layers × 2 (KV) × 8 kv_heads × 128 head_dim × 8192 ctx × 0.5625 bytes / 1e9
+    //   = 32 × 2 × 8 × 128 × 8192 × 0.5625 / 1e9 = 0.301989888 GB
+    expect(kvCacheGB(LLAMA_3_1_8B, 8192, Q4)).toBeCloseTo(0.301989888, 9);
+  });
+
+  test('MLA also scales with bytesPerElement', () => {
+    const fp16 = kvCacheGB(KIMI_K2, 8192, FP16);
+    const q8 = kvCacheGB(KIMI_K2, 8192, Q8);
+    expect(fp16 / q8).toBeCloseTo(2 / 1.0625, 6);
+  });
+
+  test('hybrid-linear scales with bytesPerElement (only full-attn layers count)', () => {
+    const fp16 = kvCacheGB(QWEN_3_6_27B, 8192, FP16);
+    const q4 = kvCacheGB(QWEN_3_6_27B, 8192, Q4);
+    expect(fp16 / q4).toBeCloseTo(2 / 0.5625, 6);
+  });
+
+  test('estimateMemory with Q4 KV: lower kvCacheGB and lower totalGB', () => {
+    const Q4_K_M = { id: 'q4_k_m', name: 'Q4_K_M', bytesPerParam: 0.604, description: '' };
+    const fp16 = estimateMemory(LLAMA_3_1_8B, Q4_K_M, 131072);
+    const withQ4Kv = estimateMemory(LLAMA_3_1_8B, Q4_K_M, 131072, Q4);
+    // Weights identical, KV smaller, total smaller.
+    expect(withQ4Kv.weightsGB).toBeCloseTo(fp16.weightsGB, 9);
+    expect(withQ4Kv.kvCacheGB).toBeLessThan(fp16.kvCacheGB);
+    expect(withQ4Kv.totalGB).toBeLessThan(fp16.totalGB);
+  });
+
+  test('decodeTokensPerSecond: lower KV bytes → faster decode', () => {
+    const Q4_K_M = { id: 'q4_k_m', name: 'Q4_K_M', bytesPerParam: 0.604, description: '' };
+    const baseline = decodeTokensPerSecond(LLAMA_3_1_8B, Q4_K_M, 131072, 1000);
+    const withQ4Kv = decodeTokensPerSecond(LLAMA_3_1_8B, Q4_K_M, 131072, 1000, Q4);
+    expect(withQ4Kv.kvBytesPerToken).toBeLessThan(baseline.kvBytesPerToken);
+    expect(withQ4Kv.theoreticalTps).toBeGreaterThan(baseline.theoreticalTps);
+  });
+});
+
 describe('estimateMemory', () => {
   test('total equals sum of components', () => {
     const e = estimateMemory(
@@ -280,6 +345,40 @@ describe('decodeTokensPerSecond', () => {
     const at500 = decodeTokensPerSecond(LLAMA_3_1_8B, Q4_K_M, 8192, 500).theoreticalTps;
     const at1000 = decodeTokensPerSecond(LLAMA_3_1_8B, Q4_K_M, 8192, 1000).theoreticalTps;
     expect(at1000 / at500).toBeCloseTo(2, 9);
+  });
+});
+
+describe('largestFittingQuant — KV quant pass-through', () => {
+  // Llama 3.1 8B at 131072 ctx, RAM=10 GB, current=Q4_K_M, KV=FP16:
+  //   weights at Q4_K_M = 4.85 GB, KV FP16 = 17.18 GB → total ≈ 22.53 GB (over 10 GB)
+  //   smaller weight quants (Q4_0, Q3_K_M, Q2_K) are also dwarfed by KV cache → no fit
+  // With KV=Q4_0:
+  //   KV ≈ 4.83 GB; Q4_0 weights ≈ 4.52 GB → total ≈ 9.85 GB (fits)
+  test('respects kvQuant when probing smaller weight quants', () => {
+    const Q4_K_M = QUANT_LEVELS.find((q) => q.id === 'q4_k_m')!;
+    const fp16 = resolveKvCacheQuant('fp16');
+    const q4Kv = resolveKvCacheQuant('q4_0');
+
+    const fitFp16 = largestFittingQuant(LLAMA_3_1_8B, 131072, 10, Q4_K_M, QUANT_LEVELS, fp16);
+    expect(fitFp16).toBeNull();
+
+    const fitQ4Kv = largestFittingQuant(LLAMA_3_1_8B, 131072, 10, Q4_K_M, QUANT_LEVELS, q4Kv);
+    expect(fitQ4Kv).not.toBeNull();
+    expect(fitQ4Kv!.bytesPerParam).toBeLessThan(Q4_K_M.bytesPerParam);
+  });
+});
+
+describe('resolveKvCacheQuant — silent fallback contract', () => {
+  test('unknown id returns the FP16 default', () => {
+    expect(resolveKvCacheQuant('garbage').id).toBe('fp16');
+    expect(resolveKvCacheQuant('').id).toBe('fp16');
+    expect(resolveKvCacheQuant(undefined).id).toBe('fp16');
+  });
+
+  test('known ids resolve to themselves', () => {
+    expect(resolveKvCacheQuant('fp16').id).toBe('fp16');
+    expect(resolveKvCacheQuant('q8_0').id).toBe('q8_0');
+    expect(resolveKvCacheQuant('q4_0').id).toBe('q4_0');
   });
 });
 

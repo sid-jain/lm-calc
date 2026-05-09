@@ -1,4 +1,5 @@
 import { FIT_STYLES } from '../lib/fitStyle';
+import { resolveKvCacheQuant } from '../lib/kvCacheQuants';
 import { decodeTokensPerSecond, estimateMemory } from '../lib/memory';
 import { QUANT_LEVELS } from '../lib/quants';
 import type { RejectedRecommendation, RejectionReason } from '../lib/recommender';
@@ -16,6 +17,7 @@ interface Props extends RejectedRecommendation {
   contextLen: number;
   bandwidthGBps: number;
   lockQuantId: string | null;
+  kvCacheQuantId: string;
 }
 
 export function RejectedRow({
@@ -25,6 +27,7 @@ export function RejectedRow({
   contextLen,
   bandwidthGBps,
   lockQuantId,
+  kvCacheQuantId,
 }: Props): JSX.Element {
   const reasons: RejectionReason[] = [...filterReasons, ...hardwareReasons];
 
@@ -32,14 +35,16 @@ export function RejectedRow({
   // probed for hardware feasibility). Calculations clamp context to the model's max.
   const detailQuant =
     QUANT_LEVELS.find((q) => q.id === lockQuantId) ?? QUANT_LEVELS[QUANT_LEVELS.length - 1];
+  const kvQuant = resolveKvCacheQuant(kvCacheQuantId);
   const effectiveContext = Math.min(contextLen, model.arch.maxContext);
-  const estimate = estimateMemory(model, detailQuant, effectiveContext);
-  const speed = decodeTokensPerSecond(model, detailQuant, effectiveContext, bandwidthGBps);
+  const estimate = estimateMemory(model, detailQuant, effectiveContext, kvQuant);
+  const speed = decodeTokensPerSecond(model, detailQuant, effectiveContext, bandwidthGBps, kvQuant);
 
   return (
     <RowShell
       model={model}
       quant={detailQuant}
+      kvQuant={kvQuant}
       contextLen={contextLen}
       estimate={estimate}
       speed={speed}
