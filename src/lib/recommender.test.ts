@@ -309,6 +309,69 @@ describe('recommend — KV cache quant', () => {
   });
 });
 
+describe('recommend — cross-model ranking', () => {
+  test('lower joint-loss model ranks first regardless of size', () => {
+    // 32 GB / 8K ctx — both models fit comfortably, but quality differs:
+    //   Llama 3.1 8B  → FP16 weights + FP16 KV  (joint loss 0)
+    //   Mixtral 8x7B  → Q4_K_M weights + FP16 KV (joint loss 0.04)
+    // Llama outranks Mixtral on quality even though Mixtral has ~6x more params.
+    const { matches } = recommend([LLAMA_3_1_8B, MIXTRAL_8X7B], QUANT_LEVELS, {
+      ramGB: 32,
+      minContextLen: 8192,
+      minTps: 0,
+      bandwidthGBps: 200,
+      lockQuantId: null,
+      excludedDevs: new Set(),
+    });
+    expect(matches).toHaveLength(2);
+    expect(matches[0].model.id).toBe('llama-3-1-8b');
+    expect(matches[0].quant.id).toBe('fp16');
+    expect(matches[1].model.id).toBe('mixtral-8x7b-v0-1');
+  });
+
+  test('same loss → faster model wins (speed beats params as tiebreaker)', () => {
+    // Lock both to Q4_K_M + FP16 KV so joint loss is identical (0.04). Decode
+    // speed differs because weight bytes/token does:
+    //   Llama 8B dense: 8.03 × 0.604 = 4.85 GB/tok  → ~16.9 lowTps at 200 GB/s
+    //   Mixtral active: 12.88 × 0.604 = 7.78 GB/tok → ~11.3 lowTps
+    // With losses tied, score = lowTps + 0.001 × params. Speed gap (~5.6) far
+    // exceeds the params-weight gap (~0.04), so Llama outranks Mixtral.
+    const { matches } = recommend([LLAMA_3_1_8B, MIXTRAL_8X7B], QUANT_LEVELS, {
+      ramGB: 64,
+      minContextLen: 8192,
+      minTps: 0,
+      bandwidthGBps: 200,
+      lockQuantId: 'q4_k_m',
+      kvCacheQuantId: 'fp16',
+      excludedDevs: new Set(),
+    });
+    expect(matches).toHaveLength(2);
+    expect(matches[0].model.id).toBe('llama-3-1-8b');
+    expect(matches[1].model.id).toBe('mixtral-8x7b-v0-1');
+  });
+
+  test('quality-loss step dominates speed even at high bandwidth', () => {
+    // Locked weight = q4_k_m, auto KV. Three combos:
+    //   Q4_K_M + FP16 KV: loss 0.04, slowest
+    //   Q4_K_M + Q8   KV: loss 0.045, faster
+    //   Q4_K_M + Q4   KV: loss 0.10, fastest
+    // At 1000 GB/s the speed gaps are sizable (~10+ tok/s between tiers), but the
+    // 0.005 quality step (50 score) and 0.055 step (550 score) still dominate.
+    // Picks FP16 KV.
+    const { matches } = recommend([LLAMA_3_1_8B], QUANT_LEVELS, {
+      ramGB: 64,
+      minContextLen: 8192,
+      minTps: 0,
+      bandwidthGBps: 1000,
+      lockQuantId: 'q4_k_m',
+      kvCacheQuantId: 'auto',
+      excludedDevs: new Set(),
+    });
+    expect(matches).toHaveLength(1);
+    expect(matches[0].kvQuant.id).toBe('fp16');
+  });
+});
+
 describe('recommend — rejection reasons', () => {
   test('excluded developer produces excluded_dev filterReason', () => {
     const { matches, rejected } = recommend([LLAMA_3_1_8B], QUANT_LEVELS, {
