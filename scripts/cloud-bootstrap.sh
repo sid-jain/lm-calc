@@ -29,6 +29,13 @@ fi
 # Clear out sentinels from older script revisions so they don't accumulate.
 rm -f "$HOME"/.lm-calc-bootstrapped-* 2>/dev/null || true
 
+# Mirror bench.sh's PATH prepend so the nvcc check below finds the toolkit on
+# local desktops where /usr/local/cuda/bin isn't on the non-interactive
+# shell's PATH (common — only added by .bashrc on interactive logins).
+if [ -d /usr/local/cuda/bin ]; then
+  export PATH="/usr/local/cuda/bin:$PATH"
+fi
+
 if [ "$EUID" -eq 0 ]; then
   # Root: install system deps. Cloud CUDA images ship missing most of these.
   apt-get update -qq
