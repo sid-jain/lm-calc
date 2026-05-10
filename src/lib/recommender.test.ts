@@ -290,12 +290,12 @@ describe('recommend — KV cache quant', () => {
     // Mixtral 46.703B at 32K ctx (32 layers, 8 kv_heads, 128 head_dim):
     //   FP16 KV per token = 32 × 2 × 8 × 128 × 32768 × 2 / 1e9 = 4.295 GB
     //   Q8_0 KV ≈ 2.281 GB,  Q4_0 KV ≈ 1.208 GB
-    //   Q4_K_M weights = 28.21 GB → +FP16 KV = 33.0 GB; +Q8 KV = 30.99 GB
-    //   Q3_K_M weights = 22.84 GB → +FP16 KV = 27.64 GB
-    //   Budget=31 GB rejects Q4_K_M+FP16, accepts Q4_K_M+Q8 (30.99) and Q3_K_M+FP16 (27.64).
+    //   Q4_K_M weights = 28.21 GB → +FP16 KV + 0.75 overhead = 33.25; +Q8 KV = 31.24
+    //   Q3_K_M weights = 22.84 GB → +FP16 KV + 0.75 overhead = 27.89
+    //   Budget=32 GB rejects Q4_K_M+FP16 (33.25), accepts Q4_K_M+Q8 (31.24) and Q3_K_M+FP16 (27.89).
     // Joint loss: Q4_K_M+Q8 = 0.045, Q3_K_M+FP16 = 0.15 → Q4_K_M+Q8 wins.
     const { matches } = recommend([MIXTRAL_8X7B], QUANT_LEVELS, {
-      ramGB: 31,
+      ramGB: 32,
       minContextLen: 32768,
       minTps: 0,
       bandwidthGBps: 1000,

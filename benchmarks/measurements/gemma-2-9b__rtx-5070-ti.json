@@ -1,0 +1,143 @@
+{
+  "model_id": "gemma-2-9b",
+  "gpu_id": "rtx-5070-ti",
+  "llama_cpp_commit": "1e5ad35",
+  "captured_at": "2026-05-10T03:47:31Z",
+  "samples": [
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "fp16",
+      "ctx": 4096,
+      "depth": 512,
+      "peak_vram_mib": 8818,
+      "pp_tok_s": 5234.6,
+      "tg_tok_s": 96.1
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "fp16",
+      "ctx": 4096,
+      "depth": 3968,
+      "peak_vram_mib": 8818,
+      "pp_tok_s": 4211.4,
+      "tg_tok_s": 84.9
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "fp16",
+      "ctx": 8192,
+      "depth": 512,
+      "peak_vram_mib": 9490,
+      "pp_tok_s": 5196.2,
+      "tg_tok_s": 96.1
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "fp16",
+      "ctx": 8192,
+      "depth": 4096,
+      "peak_vram_mib": 9490,
+      "pp_tok_s": 4277.3,
+      "tg_tok_s": 84
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "fp16",
+      "ctx": 8192,
+      "depth": 8064,
+      "peak_vram_mib": 9490,
+      "pp_tok_s": 3817.6,
+      "tg_tok_s": 78.2
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "q4_0",
+      "ctx": 4096,
+      "depth": 512,
+      "peak_vram_mib": 7808,
+      "pp_tok_s": 4950.5,
+      "tg_tok_s": 88.6
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "q4_0",
+      "ctx": 4096,
+      "depth": 3968,
+      "peak_vram_mib": 7808,
+      "pp_tok_s": 4048.9,
+      "tg_tok_s": 83.9
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "q4_0",
+      "ctx": 8192,
+      "depth": 512,
+      "peak_vram_mib": 8028,
+      "pp_tok_s": 4931.2,
+      "tg_tok_s": 88.5
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "q4_0",
+      "ctx": 8192,
+      "depth": 4096,
+      "peak_vram_mib": 8028,
+      "pp_tok_s": 4033.6,
+      "tg_tok_s": 83.1
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "q4_0",
+      "ctx": 8192,
+      "depth": 8064,
+      "peak_vram_mib": 8028,
+      "pp_tok_s": 3620.6,
+      "tg_tok_s": 79.1
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "q8_0",
+      "ctx": 4096,
+      "depth": 512,
+      "peak_vram_mib": 8180,
+      "pp_tok_s": 4884.1,
+      "tg_tok_s": 88.8
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "q8_0",
+      "ctx": 4096,
+      "depth": 3968,
+      "peak_vram_mib": 8180,
+      "pp_tok_s": 3978.2,
+      "tg_tok_s": 83.4
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "q8_0",
+      "ctx": 8192,
+      "depth": 512,
+      "peak_vram_mib": 8570,
+      "pp_tok_s": 4864.2,
+      "tg_tok_s": 88.7
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "q8_0",
+      "ctx": 8192,
+      "depth": 4096,
+      "peak_vram_mib": 8570,
+      "pp_tok_s": 3967.9,
+      "tg_tok_s": 82.5
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "q8_0",
+      "ctx": 8192,
+      "depth": 8064,
+      "peak_vram_mib": 8570,
+      "pp_tok_s": 3566.2,
+      "tg_tok_s": 78.6
+    }
+  ]
+}

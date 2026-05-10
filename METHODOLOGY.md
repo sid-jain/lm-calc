@@ -13,9 +13,9 @@ total = weights + kv_cache + framework_overhead
   - Mixed-attention models (Gemma 2/3) use `min(ctx, sliding_window)` for sliding layers.
   - **MLA** models (DeepSeek V3, Kimi K2, Moonlight) store a compressed latent + small rope cache: `(kv_lora_rank + qk_rope_head_dim) × bytes_per_kv_element × layers × ctx` — typically ~30× smaller than naive GQA.
   - **Hybrid-linear** models (Qwen 3.6) interleave full-attention and linear-attention layers; only the full-attention layers contribute to the KV cache.
-- **Framework overhead** = a flat 0.5 GB.
+- **Framework overhead** = a flat 0.75 GB. Bumped from 0.5 GB after Gemma 2 9B measurements on RTX 4070 / 5070 Ti showed real overhead is consistently 0.7–1.0 GB.
 
-The displayed memory range is the point estimate scaled by **0.95× (low)** and **1.20× (high)** to reflect framework and per-tensor variability.
+The displayed memory range is the point estimate scaled by **0.95× (low)** and **1.30× (high)** to reflect framework and per-tensor variability. The high band was widened from 1.20× to 1.30× after the same Gemma data: large-vocab + mixed-attention models use noticeably more scratch / activation memory than the constant overhead captures, and the band has to bracket that.
 
 ## Decode speed
 
@@ -46,7 +46,7 @@ All values (`hidden_size`, `num_hidden_layers`, `num_attention_heads`, `num_key_
 ## Limitations
 
 - **Single-batch inference** is assumed. No multi-GPU sharding.
-- **Framework overhead** is approximated as a flat 0.5 GB. Real overhead varies by engine (llama.cpp, vLLM, MLX, Transformers).
+- **Framework overhead** is approximated as a flat 0.75 GB. Real overhead varies by engine (llama.cpp, vLLM, MLX, Transformers) and by model architecture (large-vocab models like Gemma sit toward the upper end).
 - **Quant byte averages** are llama.cpp BPW values. Real GGUF sizes vary slightly because K-quants apply different bit widths to different tensors.
 - **Prefill speed** (compute-bound, depends on FLOPS) isn't modeled. The displayed tok/s is decode-only.
 - **MoE routing overhead** in real systems often re-reads experts due to routing variance. The 0.50× low end of the speed range accounts for this.

@@ -1,9 +1,19 @@
 import { DEFAULT_KV_CACHE_QUANT } from './kvCacheQuants';
 import type { KvCacheQuant, Model, QuantLevel, MemoryEstimate, SpeedEstimate } from './types';
 
-const FRAMEWORK_OVERHEAD_GB = 0.5;
+// Framework overhead bumped 0.5 → 0.75 after RTX 4070 + RTX 5070 Ti measurements
+// on Gemma 2 9B showed the constant 0.5 was too tight: across both GPUs and
+// every (ctx, kv-quant) combo, measured peak VRAM sat 0.6–1.0 GB above
+// (weights + kv). The 3060 + Llama 3.1 8B data showed the same direction with
+// smaller magnitude (~0.6 GB extra), so 0.75 is a data-backed midpoint.
+const FRAMEWORK_OVERHEAD_GB = 0.75;
 const ESTIMATE_LOW_FACTOR = 0.95;
-const ESTIMATE_HIGH_FACTOR = 1.2;
+// High factor bumped 1.20 → 1.30 to bracket Gemma 2 9B's higher per-config
+// scratch/activation memory (large vocab + mixed-attention compute buffers
+// llama.cpp allocates beyond the weights+KV+overhead model). Tightest fit is
+// gemma+rtx-4070+ctx=4096+q4_0 at measured/point ≈ 1.23; 1.30 gives ~5%
+// headroom. Future per-model architecture-aware overhead would let us tighten.
+const ESTIMATE_HIGH_FACTOR = 1.3;
 const DECODE_EFFICIENCY_LOW = 0.5;
 // Bumped 0.85 → 0.92 based on RTX 3060 + Llama 3.1 8B Q4_K_M measurements:
 // every fp16-KV decode came in at 0.85–0.904 of the bandwidth-bound theoretical
