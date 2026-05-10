@@ -8,3 +8,9 @@ dist
 coverage
 *.tsbuildinfo
 .claude/
+
+# Cloud bench orchestrator scratch — manifest is per-user; results are
+# normalized into benchmarks/measurements/ via bench-import.ts before commit.
+scripts/cloud-targets.json
+cloud-results/
+cloud-logs/

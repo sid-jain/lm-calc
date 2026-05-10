@@ -1,0 +1,32 @@
+{
+  "_comment": "Copy to scripts/cloud-targets.json (gitignored), edit, then run scripts/cloud-orchestrate.ts. boxes × jobs × weight_quants is the sweep. gpu_id is auto-detected per box; pin it only if detect-device.ts picks wrong.",
+
+  "boxes": [
+    {
+      "name": "vast-3090",
+      "host": "12.34.56.78",
+      "port": 22,
+      "user": "root",
+      "ssh_key": "~/.ssh/vast"
+    },
+    {
+      "name": "runpod-4090",
+      "host": "9.8.7.6",
+      "port": 8888,
+      "user": "root"
+    }
+  ],
+
+  "jobs": [
+    {
+      "model_id": "llama-3-1-8b",
+      "hf_repo": "bartowski/Meta-Llama-3.1-8B-Instruct-GGUF",
+      "weight_quants": ["q8_0", "q4_k_m", "q2_k"]
+    },
+    {
+      "model_id": "qwen3-6-27b",
+      "hf_repo": "unsloth/Qwen3.6-27B-GGUF",
+      "weight_quants": ["q8_0", "q4_k_m", "q2_k"]
+    }
+  ]
+}

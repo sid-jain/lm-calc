@@ -168,21 +168,32 @@ function sortSamples(samples: Sample[]): Sample[] {
 function main() {
   const args = process.argv.slice(2);
   if (args.length === 0 || args[0] === '-h' || args[0] === '--help') {
-    console.error('Usage: tsx scripts/bench-import.ts <results.csv> [--out <dir>]');
+    console.error(
+      'Usage: tsx scripts/bench-import.ts <results.csv> [<results.csv>...] [--out <dir>]',
+    );
     process.exit(1);
   }
-  const csvPath = args[0];
+  const csvPaths: string[] = [];
   let outDir = resolve(REPO_ROOT, 'benchmarks/measurements');
-  for (let i = 1; i < args.length; i++) {
-    if (args[i] === '--out') outDir = resolve(args[++i]);
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--out') {
+      outDir = resolve(args[++i]);
+    } else {
+      csvPaths.push(args[i]);
+    }
   }
-  if (!existsSync(csvPath)) {
-    console.error(`No such file: ${csvPath}`);
-    process.exit(1);
+  for (const p of csvPaths) {
+    if (!existsSync(p)) {
+      console.error(`No such file: ${p}`);
+      process.exit(1);
+    }
   }
   mkdirSync(outDir, { recursive: true });
 
-  const rows = parseCsv(csvPath);
+  // Concatenate rows from every CSV. Fixtures are keyed by (model_id, gpu_id),
+  // so importing many CSVs from many cloud boxes lands them in the right
+  // per-pair fixture file with no manual merging needed.
+  const rows = csvPaths.flatMap((p) => parseCsv(p));
   let kept = 0;
   let skipped = 0;
   // Group by (model_id, gpu_id). Capture the most recent commit + timestamp per
