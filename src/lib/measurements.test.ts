@@ -120,6 +120,20 @@ if (fixtures.length === 0) {
         if (!wq || !kvq) continue; // skip-quant tests below catch the unknown-id case
         const ctxUsed = Math.min(g.ctx, g.maxDepth + GEN_TOKENS_PAD);
         const groupLabel = `${g.weight}+${g.kv} ctx=${g.ctx} (max_depth=${g.maxDepth})`;
+        // Partial-OOM detection: bench.sh always appends a synthetic
+        // depth = ctx - GEN_TOKENS_PAD to force a full-ctx KV allocation. If
+        // the fixture's max successful depth is well below that, the synthetic
+        // attempt OOMed mid-allocation. In that case peak_vram_mib reflects
+        // the failed partial allocation (which can sit somewhere between the
+        // depth-based and ctx-based predictions, depending on how far the
+        // allocator got before erroring) — not a clean run we can assert
+        // against. Skip the band check; the successful per-depth rows are
+        // still in the fixture as data.
+        const partialOom = g.maxDepth + GEN_TOKENS_PAD < g.ctx;
+        if (partialOom) {
+          test.skip(`${groupLabel}: peak VRAM skipped (partial OOM at synthetic max_depth)`, () => {});
+          continue;
+        }
         test(`${groupLabel}: peak VRAM inside predicted band`, () => {
           const est = estimateMemory(model, wq, ctxUsed, kvq);
           const lowMib = (est.rangeGB.low * BYTES_PER_GB) / BYTES_PER_MIB;
