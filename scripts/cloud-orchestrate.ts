@@ -28,7 +28,14 @@ import { homedir } from 'node:os';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..');
-const MANIFEST_PATH = join(REPO_ROOT, 'scripts/cloud-targets.json');
+// --manifest <path> lets you run multiple orchestrator instances in parallel
+// against disjoint boxes (e.g. one orchestrator per box mid-flight without
+// disrupting the others). Default lives at scripts/cloud-targets.json.
+const cliArgs = process.argv.slice(2);
+let MANIFEST_PATH = join(REPO_ROOT, 'scripts/cloud-targets.json');
+for (let i = 0; i < cliArgs.length; i++) {
+  if (cliArgs[i] === '--manifest') MANIFEST_PATH = resolve(cliArgs[++i]);
+}
 const RESULTS_DIR = join(REPO_ROOT, 'cloud-results');
 const LOGS_DIR = join(REPO_ROOT, 'cloud-logs');
 
@@ -57,8 +64,25 @@ function expand(path: string): string {
   return path;
 }
 
+function scpFlags(box: Box): string[] {
+  const args = ['-o', 'ServerAliveInterval=60', '-o', 'StrictHostKeyChecking=accept-new'];
+  if (box.port) args.push('-P', String(box.port));
+  if (box.ssh_key) args.push('-i', expand(box.ssh_key));
+  return args;
+}
+
 function sshArgs(box: Box): string[] {
-  const args = ['-o', 'ServerAliveInterval=60', '-o', 'ServerAliveCountMax=10'];
+  // accept-new auto-trusts first-time host keys (so orchestrator doesn't hang
+  // on the prompt for fresh cloud boxes) but still errors if a key changes —
+  // safer than =no, and aligned with a "rented box, short-lived" threat model.
+  const args = [
+    '-o',
+    'ServerAliveInterval=60',
+    '-o',
+    'ServerAliveCountMax=10',
+    '-o',
+    'StrictHostKeyChecking=accept-new',
+  ];
   if (box.port) args.push('-p', String(box.port));
   if (box.ssh_key) args.push('-i', expand(box.ssh_key));
   return args;
@@ -168,6 +192,13 @@ async function runBox(box: Box, jobs: Job[]): Promise<BoxOutcome> {
     };
   }
 
+  // Clear any stale results.csv on the box so this orchestration's bench runs
+  // produce a clean CSV (bench.sh appends; we don't want rows from a previous
+  // failed run mixed into this one's fixture). The llama.cpp build and any
+  // downloaded models stay — those are expensive to redo.
+  heartbeat('clear stale results.csv');
+  await run('ssh', [...ssh, target, 'rm -f ~/lm-calc-bench/results/results.csv'], log, 'clear-csv');
+
   // npm ci — needed for tsx and the calculator's TS modules that bench.sh imports.
   heartbeat('npm ci');
   const npmCode = await run(
@@ -195,35 +226,176 @@ async function runBox(box: Box, jobs: Job[]): Promise<BoxOutcome> {
   for (const job of jobs) {
     for (const wq of job.weight_quants) {
       const gpuFlag = box.gpu_id ? ` --gpu-id ${box.gpu_id}` : '';
-      const benchCmd =
+      const jobTag = `${job.model_id}-${wq}`;
+      // Detached-bench pattern: long llama.cpp builds (15-30 min) over flaky
+      // cloud SSH cause idle channels that get killed by provider firewalls
+      // even with ServerAliveInterval. Run the bench under `nohup` on the
+      // remote so it survives any disconnect; we poll a per-job sentinel file
+      // and pull the per-job log on completion. Poll interval is 60s — small
+      // enough to get prompt heartbeats, large enough to not hammer ssh auth.
+      const sentinel = `~/lm-calc-bench/.done-${jobTag}`;
+      const remoteLog = `~/lm-calc-bench/cloud-${jobTag}.log`;
+      // --python points at the venv created by cloud-bootstrap.sh. Bench.sh
+      // uses it for the huggingface_hub model download; system python3 stays
+      // untouched.
+      const benchInner =
         `cd lm-calc && ./scripts/bench.sh ` +
         `--model-id ${job.model_id} ` +
         `--hf-repo ${job.hf_repo} ` +
         `--weight-quant ${wq}` +
-        gpuFlag;
-      heartbeat(`bench ${job.model_id} ${wq}`);
-      const benchCode = await run(
-        'ssh',
-        [...ssh, target, benchCmd],
-        log,
-        `bench-${job.model_id}-${wq}`,
-      );
-      if (benchCode === 0) jobsOk++;
-      else {
+        gpuFlag +
+        ` --python $HOME/lm-calc-venv/bin/python`;
+      // Wrap to capture exit code into the sentinel (so polling can distinguish
+      // success from failure without scraping the log). setsid -f puts the
+      // bench in a new session and forks immediately, so the parent ssh
+      // channel closes cleanly without waiting on inherited file descriptors
+      // (the nohup + & + disown variant left ssh zombies waiting on remote
+      // pipes).
+      const launchCmd =
+        `mkdir -p ~/lm-calc-bench && rm -f ${sentinel} && ` +
+        `setsid -f bash -c '(${benchInner}); echo "exit=$?" > ${sentinel}' ` +
+        `</dev/null > ${remoteLog} 2>&1`;
+      heartbeat(`bench ${job.model_id} ${wq} (detached)`);
+      const launchCode = await run('ssh', [...ssh, target, launchCmd], log, `launch-${jobTag}`);
+      if (launchCode !== 0) {
         jobsFailed++;
-        heartbeat(`bench ${job.model_id} ${wq} FAILED (exit=${benchCode}) — continuing`);
+        heartbeat(`launch ${jobTag} FAILED (exit=${launchCode}) — continuing`);
+        continue;
+      }
+      // Local mirror of the remote per-job log (and the cmake build log) so
+      // operators can `tail -F cloud-logs/<box>__<job>.log` instead of ssh-ing
+      // in. Plus a separate health log written by us (one line per poll) with
+      // proc count, GPU util, and log sizes — easy to spot hangs or unexpected
+      // exits without reading the bench log.
+      const remoteBuildLog = `~/lm-calc-bench/logs/build.log`;
+      const localBenchLog = `${LOGS_DIR}/${box.name}__${jobTag}.log`;
+      const localBuildLog = `${LOGS_DIR}/${box.name}__build.log`;
+      const localHealthLog = `${LOGS_DIR}/${box.name}__health.log`;
+      const healthStream = createWriteStream(localHealthLog, { flags: 'a' });
+      healthStream.write(
+        `# job=${jobTag} launched=${new Date().toISOString()} sentinel=${sentinel}\n`,
+      );
+      // Poll for sentinel. Each poll is a fresh ssh, so a network blip just
+      // delays the next poll — it doesn't kill the bench.
+      let waitedSec = 0;
+      // Hard wall to catch a truly stuck bench: PER_TEST_TIMEOUT * configs(=12)
+      // * a fudge for download is ~6h. Use 4h to bound a single (model, quant).
+      const maxWaitSec = 4 * 60 * 60;
+      let done = false;
+      let exitCode = -1;
+      let consecutiveZeroProc = 0;
+      while (waitedSec < maxWaitSec) {
+        await new Promise((r) => setTimeout(r, 60_000));
+        waitedSec += 60;
+
+        // Single ssh that does everything we need this cycle: read sentinel,
+        // count bench-related procs, read GPU state, and read remote log
+        // sizes. Pipe-separated for trivial parsing.
+        const probeCmd =
+          `printf '%s|%s|%s|%s|%s\\n' ` +
+          `"$(cat ${sentinel} 2>/dev/null || echo missing)" ` +
+          `"$(pgrep -fc '(scripts/bench\\.sh|cmake|nvcc|llama-bench|huggingface_hub)' 2>/dev/null || echo 0)" ` +
+          `"$(nvidia-smi --query-gpu=utilization.gpu,memory.used --format=csv,noheader 2>/dev/null | head -1 | tr -d ' ')" ` +
+          `"$(stat -c%s ${remoteBuildLog} 2>/dev/null || echo 0)" ` +
+          `"$(stat -c%s ${remoteLog} 2>/dev/null || echo 0)"`;
+        const probe = await new Promise<{ code: number; stdout: string }>((resolveP) => {
+          const child = spawn('ssh', [...ssh, target, probeCmd], {
+            stdio: ['ignore', 'pipe', 'pipe'],
+          });
+          let buf = '';
+          child.stdout.on('data', (d) => (buf += d.toString()));
+          child.on('close', (c) => resolveP({ code: c ?? 1, stdout: buf.trim() }));
+          child.on('error', () => resolveP({ code: 127, stdout: '' }));
+        });
+        const ts = new Date().toISOString();
+        if (probe.code !== 0) {
+          healthStream.write(`${ts} ssh_probe_failed code=${probe.code}\n`);
+          continue;
+        }
+        const [sentRaw, procsRaw, gpu, buildSize, benchSize] = probe.stdout.split('|');
+        const procs = Number(procsRaw) || 0;
+        healthStream.write(
+          `${ts} sentinel=${sentRaw} procs=${procs} gpu=${gpu || 'n/a'} build_log=${buildSize}b bench_log=${benchSize}b\n`,
+        );
+        // Pull both remote logs incrementally. rsync --append only sends bytes
+        // appended since last sync; --partial keeps progress on transient drops.
+        const sshOpts = [...ssh].join(' ');
+        await Promise.all([
+          run(
+            'rsync',
+            [
+              '-a',
+              '--append',
+              '--partial',
+              '-e',
+              `ssh ${sshOpts}`,
+              `${target}:${remoteLog}`,
+              localBenchLog,
+            ],
+            log,
+            `mirror-${jobTag}`,
+          ),
+          run(
+            'rsync',
+            [
+              '-a',
+              '--append',
+              '--partial',
+              '-e',
+              `ssh ${sshOpts}`,
+              `${target}:${remoteBuildLog}`,
+              localBuildLog,
+            ],
+            log,
+            `mirror-build`,
+          ),
+        ]);
+        // Sentinel present? Done.
+        if (sentRaw.startsWith('exit=')) {
+          exitCode = Number(sentRaw.replace('exit=', '')) || 0;
+          done = true;
+          break;
+        }
+        // Hang detection: 2 consecutive minutes with zero bench-related procs
+        // AND no sentinel = the bench died without writing the sentinel (a
+        // SIGKILL, OOM-kill, or crash before the trap). Surface immediately.
+        if (procs === 0) consecutiveZeroProc++;
+        else consecutiveZeroProc = 0;
+        if (consecutiveZeroProc >= 2) {
+          heartbeat(
+            `bench ${jobTag} appears DEAD: 0 procs, no sentinel, ${waitedSec}s in — abandoning`,
+          );
+          healthStream.write(`${ts} HANG_DETECTED zero_proc_minutes=${consecutiveZeroProc}\n`);
+          break;
+        }
+        // Heartbeat every 5 min so the operator sees forward progress.
+        if (waitedSec % 300 === 0) {
+          heartbeat(
+            `...still running ${jobTag} (${waitedSec / 60}m, procs=${procs}, build=${buildSize}b, bench=${benchSize}b)`,
+          );
+        }
+      }
+      healthStream.end();
+      if (!done) {
+        jobsFailed++;
+        heartbeat(`bench ${jobTag} TIMEOUT after ${maxWaitSec / 3600}h — continuing`);
+        continue;
+      }
+      if (exitCode === 0) {
+        jobsOk++;
+        heartbeat(`bench ${jobTag} OK`);
+      } else {
+        jobsFailed++;
+        heartbeat(`bench ${jobTag} FAILED (exit=${exitCode}) — continuing`);
       }
     }
   }
 
   // scp the CSV regardless of per-job failures — partial data is still useful.
   heartbeat('scp results.csv');
-  const scpArgs = ['-o', 'ServerAliveInterval=60'];
-  if (box.port) scpArgs.push('-P', String(box.port));
-  if (box.ssh_key) scpArgs.push('-i', expand(box.ssh_key));
   const scpCode = await run(
     'scp',
-    [...scpArgs, `${target}:lm-calc-bench/results/results.csv`, csvPath],
+    [...scpFlags(box), `${target}:lm-calc-bench/results/results.csv`, csvPath],
     log,
     'scp',
   );

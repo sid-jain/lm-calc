@@ -11,6 +11,7 @@ coverage
 
 # Cloud bench orchestrator scratch — manifest is per-user; results are
 # normalized into benchmarks/measurements/ via bench-import.ts before commit.
-scripts/cloud-targets.json
+scripts/cloud-targets*.json
+!scripts/cloud-targets.example.json
 cloud-results/
 cloud-logs/

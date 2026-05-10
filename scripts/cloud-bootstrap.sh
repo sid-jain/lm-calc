@@ -28,10 +28,14 @@ if ! command -v npm >/dev/null; then
   apt-get install -y -qq nodejs
 fi
 
-# huggingface_hub: bench.sh's downloader. --break-system-packages because PEP 668
-# images mark the system Python as externally-managed; on a disposable cloud
-# box that's fine.
-python3 -m pip install -q --break-system-packages "huggingface_hub[cli]"
+# Isolated venv for huggingface_hub (bench.sh's downloader) — keeps system Python
+# untouched, works on any Ubuntu (no PEP 668 dance), and survives pip-version
+# differences across cloud images. The orchestrator passes
+# --python ~/lm-calc-venv/bin/python to bench.sh so it picks up this interpreter
+# without us having to "activate" anything across non-interactive ssh sessions.
+apt-get install -y -qq python3-venv
+python3 -m venv "$HOME/lm-calc-venv"
+"$HOME/lm-calc-venv/bin/pip" install -q -U "huggingface_hub[cli]"
 
 touch "$HOME/.lm-calc-bootstrapped"
 echo "bootstrap done"
