@@ -21,9 +21,11 @@
 #   --model-id <id>        joins to src/data/models.json (.id)
 #   --hf-repo <repo>       HuggingFace repo containing the GGUF
 #   --weight-quant <id>    joins to src/lib/quants.ts (.id), e.g. q4_k_m, q8_0
-#   --gpu-id <id>          joins to src/lib/devices.ts (.id), e.g. rtx-3090
 #
 # Optional flags:
+#   --gpu-id <id>          joins to src/lib/devices.ts (.id). If omitted, auto-detected
+#                          via scripts/detect-device.ts (nvidia-smi → DEVICES). Pin
+#                          this if the auto-pick is wrong.
 #   --file-glob <pat>      GGUF filename pattern (default: derived from weight-quant)
 #   --workdir <dir>        default $HOME/lm-calc-bench
 #   --gpu-index <n>        default 0
@@ -90,7 +92,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-for req in MODEL_ID HF_REPO WEIGHT_QUANT GPU_ID; do
+for req in MODEL_ID HF_REPO WEIGHT_QUANT; do
   if [ -z "${!req}" ]; then
     echo "ERROR: --${req,,} is required (got empty)" | tr '_' '-'
     usage 1
@@ -108,6 +110,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 banner() { printf "\n========== %s ==========\n" "$*"; }
+
+# Auto-detect --gpu-id if not given. Runs detect-device.ts which probes nvidia-smi
+# (Apple Silicon and AMD are detected but currently exit non-zero since bench.sh
+# is CUDA-only). Override with --gpu-id if the auto-pick is wrong.
+if [ -z "$GPU_ID" ]; then
+  banner "Auto-detecting GPU"
+  GPU_ID=$(cd "$REPO_ROOT" && npx --no-install tsx scripts/detect-device.ts) || {
+    echo "ERROR: --gpu-id auto-detection failed. Pass --gpu-id explicitly."
+    exit 1
+  }
+  echo "  Detected: $GPU_ID"
+fi
+
 banner "Validating IDs against calculator data"
 
 VALIDATION="$(
