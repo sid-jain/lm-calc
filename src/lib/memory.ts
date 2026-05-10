@@ -7,7 +7,12 @@ import type { KvCacheQuant, Model, QuantLevel, MemoryEstimate, SpeedEstimate } f
 // (weights + kv). The 3060 + Llama 3.1 8B data showed the same direction with
 // smaller magnitude (~0.6 GB extra), so 0.75 is a data-backed midpoint.
 const FRAMEWORK_OVERHEAD_GB = 0.75;
-const ESTIMATE_LOW_FACTOR = 0.95;
+// Low factor lowered 0.95 → 0.90 after Qwen3 8B Q4_K_M on RTX 4070 + RTX 5070 Ti
+// landed 0.94–0.95 of the point estimate (i.e. just below the 0.95 floor by
+// 12–16 MiB / ~0.2%). Reverse-solving says Qwen's real overhead at small ctx is
+// ~0.4 GB, vs Gemma's ~1.0 GB — the constant 0.75 GB has to compromise. 0.90
+// gives architecture-specific variability and nvidia-smi 1Hz sampling slack.
+const ESTIMATE_LOW_FACTOR = 0.9;
 // High factor bumped 1.20 → 1.30 to bracket Gemma 2 9B's higher per-config
 // scratch/activation memory (large vocab + mixed-attention compute buffers
 // llama.cpp allocates beyond the weights+KV+overhead model). Tightest fit is

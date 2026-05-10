@@ -15,7 +15,7 @@ total = weights + kv_cache + framework_overhead
   - **Hybrid-linear** models (Qwen 3.6) interleave full-attention and linear-attention layers; only the full-attention layers contribute to the KV cache.
 - **Framework overhead** = a flat 0.75 GB. Bumped from 0.5 GB after Gemma 2 9B measurements on RTX 4070 / 5070 Ti showed real overhead is consistently 0.7–1.0 GB.
 
-The displayed memory range is the point estimate scaled by **0.95× (low)** and **1.30× (high)** to reflect framework and per-tensor variability. The high band was widened from 1.20× to 1.30× after the same Gemma data: large-vocab + mixed-attention models use noticeably more scratch / activation memory than the constant overhead captures, and the band has to bracket that.
+The displayed memory range is the point estimate scaled by **0.90× (low)** and **1.30× (high)** to reflect framework and per-tensor variability. The high band was widened from 1.20× to 1.30× after Gemma 2 9B data: large-vocab + mixed-attention models use noticeably more scratch / activation memory than the constant overhead captures. The low band was widened from 0.95× to 0.90× after Qwen3 8B data: it has _less_ overhead than the constant assumes (~0.4 GB vs the modeled 0.75 GB at small ctx), so the floor would clip otherwise. The truth is overhead is architecture-dependent and a single constant has to compromise — the wider band catches that variability.
 
 ## Decode speed
 
