@@ -61,6 +61,16 @@
     {
       "weight_quant_id": "q4_k_m",
       "kv_quant_id": "fp16",
+      "ctx": 32768,
+      "depth": 32640,
+      "peak_vram_mib": 11924,
+      "pp_tok_s": null,
+      "tg_tok_s": null,
+      "status": "oom"
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "fp16",
       "ctx": 65536,
       "depth": 512,
       "peak_vram_mib": 11924,
@@ -88,6 +98,26 @@
     {
       "weight_quant_id": "q4_k_m",
       "kv_quant_id": "fp16",
+      "ctx": 65536,
+      "depth": 32768,
+      "peak_vram_mib": 11924,
+      "pp_tok_s": null,
+      "tg_tok_s": null,
+      "status": "oom"
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "fp16",
+      "ctx": 65536,
+      "depth": 65408,
+      "peak_vram_mib": 11924,
+      "pp_tok_s": null,
+      "tg_tok_s": null,
+      "status": "oom"
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "fp16",
       "ctx": 131072,
       "depth": 512,
       "peak_vram_mib": 11924,
@@ -111,6 +141,26 @@
       "peak_vram_mib": 11924,
       "pp_tok_s": 1186.3,
       "tg_tok_s": 37.2
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "fp16",
+      "ctx": 131072,
+      "depth": 32768,
+      "peak_vram_mib": 11924,
+      "pp_tok_s": null,
+      "tg_tok_s": null,
+      "status": "oom"
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "fp16",
+      "ctx": 131072,
+      "depth": 130944,
+      "peak_vram_mib": 11924,
+      "pp_tok_s": null,
+      "tg_tok_s": null,
+      "status": "oom"
     },
     {
       "weight_quant_id": "q4_k_m",
@@ -214,6 +264,16 @@
     {
       "weight_quant_id": "q4_k_m",
       "kv_quant_id": "q4_0",
+      "ctx": 65536,
+      "depth": 65408,
+      "peak_vram_mib": 10698,
+      "pp_tok_s": null,
+      "tg_tok_s": null,
+      "status": "oom"
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "q4_0",
       "ctx": 131072,
       "depth": 512,
       "peak_vram_mib": 10698,
@@ -246,6 +306,16 @@
       "peak_vram_mib": 10698,
       "pp_tok_s": 692.6,
       "tg_tok_s": 27.2
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "q4_0",
+      "ctx": 131072,
+      "depth": 130944,
+      "peak_vram_mib": 10698,
+      "pp_tok_s": null,
+      "tg_tok_s": null,
+      "status": "oom"
     },
     {
       "weight_quant_id": "q4_k_m",
@@ -304,6 +374,16 @@
     {
       "weight_quant_id": "q4_k_m",
       "kv_quant_id": "q8_0",
+      "ctx": 32768,
+      "depth": 32640,
+      "peak_vram_mib": 12006,
+      "pp_tok_s": null,
+      "tg_tok_s": null,
+      "status": "oom"
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "q8_0",
       "ctx": 65536,
       "depth": 512,
       "peak_vram_mib": 12006,
@@ -331,6 +411,26 @@
     {
       "weight_quant_id": "q4_k_m",
       "kv_quant_id": "q8_0",
+      "ctx": 65536,
+      "depth": 32768,
+      "peak_vram_mib": 12006,
+      "pp_tok_s": null,
+      "tg_tok_s": null,
+      "status": "oom"
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "q8_0",
+      "ctx": 65536,
+      "depth": 65408,
+      "peak_vram_mib": 12006,
+      "pp_tok_s": null,
+      "tg_tok_s": null,
+      "status": "oom"
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "q8_0",
       "ctx": 131072,
       "depth": 512,
       "peak_vram_mib": 12006,
@@ -354,6 +454,26 @@
       "peak_vram_mib": 12006,
       "pp_tok_s": 1143.8,
       "tg_tok_s": 35.4
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "q8_0",
+      "ctx": 131072,
+      "depth": 32768,
+      "peak_vram_mib": 12006,
+      "pp_tok_s": null,
+      "tg_tok_s": null,
+      "status": "oom"
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "q8_0",
+      "ctx": 131072,
+      "depth": 130944,
+      "peak_vram_mib": 12006,
+      "pp_tok_s": null,
+      "tg_tok_s": null,
+      "status": "oom"
     }
   ]
 }

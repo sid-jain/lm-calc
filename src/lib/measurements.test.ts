@@ -26,6 +26,11 @@ interface Sample {
   kv_quant_id: string;
   ctx: number;
   depth: number;
+  // Absent === 'ok'. 'oom' marks a (ctx, depth) the GPU couldn't fit; those
+  // rows feed the upper-band assertion (calculator must agree it wouldn't fit)
+  // and are excluded from the peak-VRAM band check (peak reflects partial
+  // allocation before crash, not a clean run).
+  status?: 'oom';
   peak_vram_mib: number;
   pp_tok_s: number | null;
   tg_tok_s: number | null;
@@ -95,23 +100,38 @@ if (fixtures.length === 0) {
       type GroupKey = string;
       const memoryGroups = new Map<
         GroupKey,
-        { weight: string; kv: string; ctx: number; maxDepth: number; peakMib: number }
+        {
+          weight: string;
+          kv: string;
+          ctx: number;
+          maxDepth: number;
+          peakMib: number;
+          hasOom: boolean;
+        }
       >();
       for (const s of fx.samples) {
         const key: GroupKey = `${s.weight_quant_id}|${s.kv_quant_id}|${s.ctx}`;
         const existing = memoryGroups.get(key);
+        const isOom = s.status === 'oom';
         if (!existing) {
           memoryGroups.set(key, {
             weight: s.weight_quant_id,
             kv: s.kv_quant_id,
             ctx: s.ctx,
-            maxDepth: s.depth,
-            peakMib: s.peak_vram_mib,
+            // OOM rows don't contribute to the success-side aggregation —
+            // their peak/depth reflect a partial allocation, not a clean run.
+            maxDepth: isOom ? 0 : s.depth,
+            peakMib: isOom ? 0 : s.peak_vram_mib,
+            hasOom: isOom,
           });
         } else {
-          existing.maxDepth = Math.max(existing.maxDepth, s.depth);
-          // peak is shared across rows in a config; take max as defensive fallback.
-          existing.peakMib = Math.max(existing.peakMib, s.peak_vram_mib);
+          if (isOom) {
+            existing.hasOom = true;
+          } else {
+            existing.maxDepth = Math.max(existing.maxDepth, s.depth);
+            // peak is shared across rows in a config; take max as defensive fallback.
+            existing.peakMib = Math.max(existing.peakMib, s.peak_vram_mib);
+          }
         }
       }
       for (const g of memoryGroups.values()) {
@@ -122,14 +142,14 @@ if (fixtures.length === 0) {
         const groupLabel = `${g.weight}+${g.kv} ctx=${g.ctx} (max_depth=${g.maxDepth})`;
         // Partial-OOM detection: bench.sh always appends a synthetic
         // depth = ctx - GEN_TOKENS_PAD to force a full-ctx KV allocation. If
-        // the fixture's max successful depth is well below that, the synthetic
-        // attempt OOMed mid-allocation. In that case peak_vram_mib reflects
-        // the failed partial allocation (which can sit somewhere between the
-        // depth-based and ctx-based predictions, depending on how far the
-        // allocator got before erroring) — not a clean run we can assert
+        // that attempt OOMed (explicit `status: 'oom'` on the sample), or if
+        // the fixture's max successful depth is well below ctx (legacy
+        // fixtures captured before status was tracked), peak_vram_mib reflects
+        // the failed partial allocation — not a clean run we can assert
         // against. Skip the band check; the successful per-depth rows are
-        // still in the fixture as data.
-        const partialOom = g.maxDepth + GEN_TOKENS_PAD < g.ctx;
+        // still in the fixture as data, and the OOM-direction assertion below
+        // covers the failure side.
+        const partialOom = g.hasOom || g.maxDepth + GEN_TOKENS_PAD < g.ctx;
         if (partialOom) {
           test.skip(`${groupLabel}: peak VRAM skipped (partial OOM at synthetic max_depth)`, () => {});
           continue;
@@ -164,6 +184,31 @@ if (fixtures.length === 0) {
         });
 
         if (!wq || !kvq) continue;
+
+        // OOM-direction assertion. When measurement OOMed at this (ctx, kv),
+        // the calculator's high band must agree it wouldn't fit — i.e. exceed
+        // the GPU's listed VRAM. Catches the inverse failure mode of the
+        // peak-VRAM band check: an over-confident floor that says "fits" when
+        // reality says "doesn't fit". Skip when the device entry has no
+        // memoryGB (no comparison possible) — in practice every benched GPU
+        // sets it.
+        if (s.status === 'oom') {
+          if (typeof device.memoryGB !== 'number') {
+            test.skip(`${sampleLabel}: OOM check skipped (device.memoryGB unset)`, () => {});
+          } else {
+            const memoryGB = device.memoryGB;
+            test(`${sampleLabel}: OOM agrees with predicted high band > GPU VRAM`, () => {
+              const est = estimateMemory(model, wq, s.ctx, kvq);
+              const msg =
+                `Measurement OOMed at ctx=${s.ctx} but calculator's high band ` +
+                `${est.rangeGB.high.toFixed(2)} GB still fits in ${memoryGB} GB ` +
+                `(point estimate ${est.totalGB.toFixed(2)} GB; ` +
+                `weights=${est.weightsGB.toFixed(2)} GB, kv=${est.kvCacheGB.toFixed(2)} GB)`;
+              expect(est.rangeGB.high, msg).toBeGreaterThan(memoryGB);
+            });
+          }
+          continue; // OOM rows have null pp/tg, no decode-band check.
+        }
 
         if (s.tg_tok_s !== null) {
           // Decode-speed band check. The bandwidth-bound formula's KV term

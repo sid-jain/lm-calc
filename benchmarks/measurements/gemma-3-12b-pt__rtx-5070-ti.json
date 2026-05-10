@@ -150,6 +150,16 @@
     },
     {
       "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "fp16",
+      "ctx": 131072,
+      "depth": 130944,
+      "peak_vram_mib": 10314,
+      "pp_tok_s": null,
+      "tg_tok_s": null,
+      "status": "oom"
+    },
+    {
+      "weight_quant_id": "q4_k_m",
       "kv_quant_id": "q4_0",
       "ctx": 8192,
       "depth": 512,

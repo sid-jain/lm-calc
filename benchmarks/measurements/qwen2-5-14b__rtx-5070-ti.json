@@ -106,6 +106,16 @@
     {
       "weight_quant_id": "q4_k_m",
       "kv_quant_id": "fp16",
+      "ctx": 65536,
+      "depth": 65408,
+      "peak_vram_mib": 14972,
+      "pp_tok_s": null,
+      "tg_tok_s": null,
+      "status": "oom"
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "fp16",
       "ctx": 131072,
       "depth": 512,
       "peak_vram_mib": 14972,
@@ -138,6 +148,16 @@
       "peak_vram_mib": 14972,
       "pp_tok_s": 1146.1,
       "tg_tok_s": 49.6
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "fp16",
+      "ctx": 131072,
+      "depth": 130944,
+      "peak_vram_mib": 14972,
+      "pp_tok_s": null,
+      "tg_tok_s": null,
+      "status": "oom"
     },
     {
       "weight_quant_id": "q4_k_m",
@@ -285,6 +305,16 @@
     },
     {
       "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "q4_0",
+      "ctx": 131072,
+      "depth": 130944,
+      "peak_vram_mib": 15832,
+      "pp_tok_s": null,
+      "tg_tok_s": null,
+      "status": "oom"
+    },
+    {
+      "weight_quant_id": "q4_k_m",
       "kv_quant_id": "q8_0",
       "ctx": 8192,
       "depth": 512,
@@ -426,6 +456,16 @@
       "peak_vram_mib": 12224,
       "pp_tok_s": 1094.2,
       "tg_tok_s": 40.9
+    },
+    {
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "q8_0",
+      "ctx": 131072,
+      "depth": 130944,
+      "peak_vram_mib": 12224,
+      "pp_tok_s": null,
+      "tg_tok_s": null,
+      "status": "oom"
     }
   ]
 }

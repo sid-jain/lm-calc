@@ -35,6 +35,10 @@ interface Sample {
   kv_quant_id: string;
   ctx: number;
   depth: number;
+  // Omitted on success rows so legacy fixtures stay valid; absent === 'ok'.
+  // 'oom' rows record the (ctx, depth) the GPU couldn't fit — the calculator's
+  // high band must agree it wouldn't fit, asserted by measurements.test.ts.
+  status?: 'oom';
   peak_vram_mib: number;
   pp_tok_s: number | null;
   tg_tok_s: number | null;
@@ -131,7 +135,7 @@ function validateRow(row: Record<string, string>): string | null {
 
 function rowToSample(row: Record<string, string>): Sample {
   const num = (s: string) => (s === 'N/A' || s === '' ? null : Number(s));
-  return {
+  const sample: Sample = {
     weight_quant_id: row.weight_quant_id,
     kv_quant_id: row.kv_quant_k,
     ctx: Number(row.ctx),
@@ -140,6 +144,8 @@ function rowToSample(row: Record<string, string>): Sample {
     pp_tok_s: num(row.pp_tok_s),
     tg_tok_s: num(row.tg_tok_s),
   };
+  if (row.status === 'OOM') sample.status = 'oom';
+  return sample;
 }
 
 function addOrReplace(samples: Sample[], next: Sample): Sample[] {
@@ -205,7 +211,10 @@ function main() {
   const groups = new Map<string, { fixture: Fixture; latestTs: string }>();
 
   for (const row of rows) {
-    if (row.status !== 'OK') {
+    // Keep OK (success) and OOM (won't-fit signal — feeds measurements.test.ts's
+    // upper-band assertion). TIMEOUT/ERROR are infrastructure failures with no
+    // signal about model fit, so they stay dropped.
+    if (row.status !== 'OK' && row.status !== 'OOM') {
       skipped++;
       continue;
     }

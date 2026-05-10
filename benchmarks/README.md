@@ -34,6 +34,20 @@ Schema:
       "pp_tok_s": 1820.0, // prefill speed at this depth
       "tg_tok_s": 38.4, // decode speed at this depth
     },
+    {
+      // Optional `status: "oom"` rows record (ctx, depth) the GPU couldn't
+      // fit. The regression test asserts the calculator's high band exceeds
+      // GPU VRAM at this ctx — i.e. it agrees the config wouldn't fit. Absent
+      // status === 'ok'; legacy fixtures without the field stay valid.
+      "weight_quant_id": "q4_k_m",
+      "kv_quant_id": "fp16",
+      "ctx": 131072,
+      "depth": 130944,
+      "status": "oom",
+      "peak_vram_mib": 18450, // last sample before crash; diagnostic only
+      "pp_tok_s": null,
+      "tg_tok_s": null,
+    },
   ],
 }
 ```
