@@ -76,6 +76,25 @@ npx vitest run src/lib/measurements.test.ts
 The import is idempotent — re-running replaces matching `(weight_quant, kv_quant, ctx, depth)`
 samples instead of appending duplicates.
 
+## Matrix shape
+
+[`scripts/bench-matrix.ts`](../scripts/bench-matrix.ts) emits one row per
+`(ctx, kv_quant)` pair, with a per-row `depths` list. The depth ladder is
+`[512, 2K, 4K, 8K, 16K, 32K, 64K, 128K, 256K, 512K]`, but each ladder point is
+included only at the **smallest ctx where it fits** — not redundantly at every
+larger ctx. Empirically, decode tok/s at depth=N is essentially independent of
+the configured ctx (depth=512 tg landed within ~0.3 tok/s across 4 ctx values
+on the same model+GPU); measuring it once is enough.
+
+Larger ctx rows still run even when `depths` is empty: `bench.sh` always
+appends a synthetic `ctx - 128` probe to force full-KV allocation, which gives
+a clean peak-VRAM datapoint at that ctx (and feeds the OOM-direction
+assertion when the configured ctx exceeds GPU VRAM).
+
+The result is denser depth coverage at the long end (we now sample 64K, 128K,
+256K depths that the previous flat ladder never reached on most models) and
+~25–40% fewer total measurements per matrix run.
+
 ## Why measurements drive the math, not the other way round
 
 The matrix generator [`scripts/bench-matrix.ts`](../scripts/bench-matrix.ts)

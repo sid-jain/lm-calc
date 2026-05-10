@@ -32,8 +32,11 @@
 #   --gen-tokens <n>       default 128
 #   --reps <n>             default 2
 #   --timeout <s>          per-config safety net (default 1800)
-#   --matrix <auto|path>   default auto (calls scripts/bench-matrix.ts)
-#   --depths <csv>         decode-depth ladder (default 512,4096,16384,32768)
+#   --matrix <auto|path>   default auto (calls scripts/bench-matrix.ts).
+#                          Each row may carry its own `depths` array; if so it
+#                          overrides --depths for that row.
+#   --depths <csv>         fallback decode-depth ladder used only when a matrix
+#                          row has no `depths` field (default 512,4096,16384,32768)
 #   --python <path>        python interpreter with huggingface_hub installed
 #                          (default: python3 from PATH). Use this to point at a
 #                          conda/venv interpreter without shadowing the system
@@ -256,11 +259,23 @@ else
   MATRIX_JSON="$(cat "$MATRIX")"
 fi
 
-# Parse matrix JSON into a bash array of "ctx ctk ctv" strings via python.
+# Parse matrix JSON into a bash array of "ctx ctk ctv depths" strings via
+# python. `depths` encoding:
+#   "-"    row carries no `depths` key — fall back to global $DEPTHS
+#          (backwards compat for hand-written --matrix files).
+#   "_"    row carries an explicit empty `depths: []` — measure no user
+#          depths; only the synthetic ctx-128 probe runs (VRAM-only row).
+#   "a,b"  comma-separated explicit depth list.
 mapfile -t TESTS < <(echo "$MATRIX_JSON" | "$PYTHON" -c '
 import json, sys
 for row in json.load(sys.stdin):
-    print(row["ctx"], row["ctk"], row["ctv"])
+    if "depths" not in row:
+        depths_str = "-"
+    elif not row["depths"]:
+        depths_str = "_"
+    else:
+        depths_str = ",".join(str(d) for d in row["depths"])
+    print(row["ctx"], row["ctk"], row["ctv"], depths_str)
 ')
 [ ${#TESTS[@]} -gt 0 ] || { echo "ERROR: empty test matrix"; exit 1; }
 echo "Matrix has ${#TESTS[@]} configs:"
@@ -286,15 +301,24 @@ to_llama_kv() {
 }
 
 run_one() {
-  local ctx=$1 ctk=$2 ctv=$3
+  local ctx=$1 ctk=$2 ctv=$3 row_depths=$4
   local label
   label=$(printf "%s_%s_ctx%06d_%s_%s" "$MODEL_ID" "$WEIGHT_QUANT" "$ctx" "$ctk" "$ctv")
   local logfile="$LOG_DIR/${label}.log"
   local vramlog="$LOG_DIR/${label}.vram"
 
+  # Per-row depths from the matrix take precedence over the global $DEPTHS.
+  # See the encoding comment where TESTS is built.
+  local source_depths
+  case "$row_depths" in
+    -)  source_depths="$DEPTHS" ;;        # fallback (row had no depths key)
+    _)  source_depths="" ;;               # explicit empty: only synthetic probe
+    *)  source_depths="$row_depths" ;;    # explicit list
+  esac
+
   # Filter depths to only those that fit (d + GEN_TOKENS <= ctx).
   local depths_csv=""
-  IFS=',' read -ra DARR <<<"$DEPTHS"
+  IFS=',' read -ra DARR <<<"$source_depths"
   for d in "${DARR[@]}"; do
     if (( d + GEN_TOKENS <= ctx )); then
       depths_csv+="${depths_csv:+,}$d"
