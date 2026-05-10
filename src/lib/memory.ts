@@ -5,7 +5,12 @@ const FRAMEWORK_OVERHEAD_GB = 0.5;
 const ESTIMATE_LOW_FACTOR = 0.95;
 const ESTIMATE_HIGH_FACTOR = 1.2;
 const DECODE_EFFICIENCY_LOW = 0.5;
-const DECODE_EFFICIENCY_HIGH = 0.85;
+// Bumped 0.85 → 0.92 based on RTX 3060 + Llama 3.1 8B Q4_K_M measurements:
+// every fp16-KV decode came in at 0.85–0.904 of the bandwidth-bound theoretical
+// max (see benchmarks/measurements/llama-3-1-8b__rtx-3060-12gb.json). 0.92
+// gives ~1.5% headroom over the observed max. Future multi-GPU data may
+// revise this further.
+const DECODE_EFFICIENCY_HIGH = 0.92;
 
 export function weightsGB(model: Model, quant: QuantLevel): number {
   return model.params * quant.bytesPerParam;

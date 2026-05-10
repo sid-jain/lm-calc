@@ -26,8 +26,18 @@ tok/s ≈ bandwidth ÷ (active_weight_bytes + kv_bytes)
 ```
 
 - For MoE, decode uses _active_ params per token (not total), so bandwidth is divided over far fewer bytes than the full weight size.
-- The displayed range applies a **0.50–0.85× efficiency factor** to the theoretical maximum to reflect real engine overhead.
+- The displayed range applies a **0.50–0.92× efficiency factor** to the theoretical maximum to reflect real engine overhead. The high end was raised from 0.85 to 0.92 after the first RTX 3060 measurements showed fp16-KV decode landed in 0.85–0.904.
 - Prefill (prompt processing) is compute-bound and is not modeled here.
+
+### Decode speed limits
+
+The bandwidth-only formula assumes that once bytes arrive at the compute units, the matmul + attention math is "free." That holds when the cache is FP16 (no transformation between read and use), but breaks down for **quantized KV cache at high depth**:
+
+- Q8_0 / Q4_0 KV stores values in 32-element blocks with an FP16 scale. Every read must dequantize: read int8/int4 → multiply by scale → cast to fp16 → use. That adds compute per byte, not modelled by the formula.
+- At low depth this is invisible because weights dominate the byte count. Once KV bytes overtake weight bytes (depth ≳16K on a typical decoder), the dequant compute on the K/V tensors becomes the bottleneck instead of the bandwidth that delivered them.
+- On low-bandwidth GPUs this hits earlier. RTX 3060 + Llama 3.1 8B + Q4_0 KV at depth 32K already runs at ~0.43 of the bandwidth-bound prediction; depth 130K runs at ~0.25.
+
+The regression test in [src/lib/measurements.test.ts](src/lib/measurements.test.ts) skips the speed-band assertion when `kv_quant != fp16 AND depth > 16K` for this reason. The data is still committed in the fixtures — just not used to assert the calculator's bands. A future improvement to the formula would take `min(bandwidth_bound, compute_bound)`, with the compute term including dequant + attention FLOPS.
 
 ## Architecture data
 

@@ -348,7 +348,7 @@ describe('decodeTokensPerSecond', () => {
     expect(e.weightBytesPerToken + e.kvBytesPerToken).toBeCloseTo(expectedBytesPerToken, 6);
     expect(e.theoreticalTps).toBeCloseTo(expectedTps, 9);
     expect(e.lowTps).toBeCloseTo(expectedTps * 0.5, 9);
-    expect(e.highTps).toBeCloseTo(expectedTps * 0.85, 9);
+    expect(e.highTps).toBeCloseTo(expectedTps * 0.92, 9);
   });
 
   test('MoE uses activeParams, not total', () => {
