@@ -1,5 +1,5 @@
 {
-  "_comment": "Copy to scripts/cloud-targets.json (gitignored), edit, then run scripts/cloud-orchestrate.ts. boxes × jobs × weight_quants is the sweep. gpu_id is auto-detected per box; pin it only if detect-device.ts picks wrong.",
+  "_comment": "Copy to scripts/cloud-targets.json (gitignored), edit, then run scripts/cloud-orchestrate.ts. boxes × jobs × weight_quants is the sweep. Each box may be a rented cloud GPU OR the operator's own machine (set `local: true` to ssh-to-localhost — needs sshd running). Mix freely. gpu_id is auto-detected per box; pin it only if detect-device.ts picks wrong.",
 
   "boxes": [
     {
@@ -14,6 +14,11 @@
       "host": "9.8.7.6",
       "port": 8888,
       "user": "root"
+    },
+    {
+      "_comment": "Local box: no host/user needed — defaults to $USER@localhost. Requires sshd running (Ubuntu: `sudo systemctl enable --now ssh`) and your own pubkey in ~/.ssh/authorized_keys.",
+      "name": "my-3060",
+      "local": true
     }
   ],
 

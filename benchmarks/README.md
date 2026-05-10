@@ -156,6 +156,16 @@ pin it on a box only if the auto-pick is wrong.
       "user": "root",
       "ssh_key": "~/.ssh/vast",
     },
+    // Mix in your own machine alongside cloud boxes. `local: true` resolves
+    // to ssh $USER@localhost — same rsync → bootstrap → bench → scp pipeline,
+    // just with a free shorter network hop. Requires sshd running locally
+    // with your own pubkey in ~/.ssh/authorized_keys; cloud-bootstrap.sh
+    // skips apt-get when the remote isn't root and verifies the toolchain
+    // (cmake, nvcc, npm, …) is already installed.
+    {
+      "name": "my-3060",
+      "local": true,
+    },
   ],
   "jobs": [
     {

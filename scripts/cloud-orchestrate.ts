@@ -48,9 +48,15 @@ const SSH_CONNECT_TIMEOUT_SEC = 15; // cap a single ssh attempt; polling re-spaw
 
 interface Box {
   name: string;
-  host: string;
+  // `local: true` runs bench.sh on this machine — no rsync, no ssh, no scp.
+  // Useful for mixing one local GPU into a fleet of cloud boxes from a single
+  // manifest. When local is true, host/port/user/ssh_key are ignored (and may
+  // be omitted). The local box still produces cloud-results/<name>/results.csv
+  // so `bench-import.ts cloud-results/*/results.csv` works uniformly.
+  local?: boolean;
+  host?: string;
   port?: number;
-  user: string;
+  user?: string;
   ssh_key?: string;
   gpu_id?: string; // optional override; default is bench.sh auto-detect
 }
@@ -138,6 +144,17 @@ interface BoxOutcome {
 }
 
 async function runBox(box: Box, jobs: Job[]): Promise<BoxOutcome> {
+  // `local: true` resolves to ssh to localhost as the current user, so the
+  // exact same rsync → bootstrap → ssh → scp pipeline runs against either a
+  // rented cloud box or the operator's own machine. Fewer code paths, fewer
+  // ways for local-only and cloud-only behavior to diverge. Requires sshd to
+  // be running locally — clearer error than silent skipping.
+  const host = box.local ? 'localhost' : box.host;
+  const user = box.local ? box.user || process.env.USER || 'root' : box.user;
+  if (!host || !user) {
+    throw new Error(`box "${box.name}" is missing host or user`);
+  }
+
   const boxResultsDir = join(RESULTS_DIR, box.name);
   const csvPath = join(boxResultsDir, 'results.csv');
   const logPath = join(LOGS_DIR, `${box.name}.log`);
@@ -164,7 +181,7 @@ async function runBox(box: Box, jobs: Job[]): Promise<BoxOutcome> {
     };
   };
 
-  const target = `${box.user}@${box.host}`;
+  const target = `${user}@${host}`;
   const ssh = sshArgs(box);
 
   heartbeat('rsync repo');
