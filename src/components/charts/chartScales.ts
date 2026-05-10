@@ -1,7 +1,15 @@
 // Pure-function helpers for the Charts view: scales, tick generators, color
-// palette, and path encoders. Split out from chartPrimitives.tsx so the .tsx
-// file holds only React components (keeps react-refresh's only-export-components
-// rule happy and lets future refactors test the math without React).
+// palette, path encoders, and series resolution. Split out from
+// chartPrimitives.tsx so the .tsx file holds only React components (keeps
+// react-refresh's only-export-components rule happy and lets future refactors
+// test the math without React).
+import type { Series } from '../../lib/appState';
+import { DEVICES } from '../../lib/devices';
+import { KV_CACHE_QUANT_LEVELS } from '../../lib/kvCacheQuants';
+import { models } from '../../lib/loadModels';
+import { QUANT_LEVELS } from '../../lib/quants';
+import type { KvCacheQuant, Model, QuantLevel } from '../../lib/types';
+import type { Device } from '../../lib/devices';
 
 export interface Scale {
   (value: number): number;
@@ -100,4 +108,70 @@ export function bandPath(upper: Array<[number, number]>, lower: Array<[number, n
     .map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`)
     .join(' L ');
   return `M ${top} L ${bot} Z`;
+}
+
+// Convert nvidia-smi-reported MiB (binary) to the calculator's decimal-GB
+// units used by `estimateMemory().rangeGB` and `Device.memoryGB`. Putting
+// measured peaks and predicted curves on the same y-axis (decimal GB)
+// matches the rest of the UI, which displays GB everywhere else.
+export const BYTES_PER_MIB = 1024 ** 2;
+export const BYTES_PER_GB_DECIMAL = 1e9;
+export function mibToGB(mib: number): number {
+  return (mib * BYTES_PER_MIB) / BYTES_PER_GB_DECIMAL;
+}
+
+// Group a sample list (already filtered to one (model, gpu, weight, kv)
+// series) into one entry per ctx. peak_vram_mib is shared across rows of
+// the same config in the bench output, so plotting one marker per row would
+// stack identical points on top of each other. OOM rows get a distinct
+// hasOom flag (the chart renders ×) and DON'T contribute their
+// peak_vram_mib to the group's peak — that value is the partial allocation
+// captured just before the crash, not a real measurement. This mirrors the
+// grouping logic in src/lib/measurements.test.ts:96-129.
+export interface MemoryGroup {
+  ctx: number;
+  peakMib: number;
+  hasOom: boolean;
+  oomDepth?: number;
+}
+export function groupMemorySamplesByCtx(
+  samples: ReadonlyArray<{
+    ctx: number;
+    depth: number;
+    peak_vram_mib: number;
+    status?: 'oom';
+  }>,
+): MemoryGroup[] {
+  const groups = new Map<number, MemoryGroup>();
+  for (const s of samples) {
+    const g = groups.get(s.ctx) ?? { ctx: s.ctx, peakMib: 0, hasOom: false };
+    if (s.status === 'oom') {
+      g.hasOom = true;
+      g.oomDepth = s.depth;
+    } else {
+      g.peakMib = Math.max(g.peakMib, s.peak_vram_mib);
+    }
+    groups.set(s.ctx, g);
+  }
+  return Array.from(groups.values()).sort((a, b) => a.ctx - b.ctx);
+}
+
+// Resolve a `(modelId, gpuId, weightQuantId, kvQuantId)` series tuple to the
+// typed objects the math + chart layers need. Returns null when any id
+// doesn't resolve — callers filter those out (the URL deserializer already
+// drops unknown ids, but defense-in-depth here costs nothing).
+export interface ResolvedSeries {
+  series: Series;
+  model: Model;
+  device: Device;
+  weightQuant: QuantLevel;
+  kvQuant: KvCacheQuant;
+}
+export function resolveSeries(s: Series): ResolvedSeries | null {
+  const model = models.find((m) => m.id === s.modelId);
+  const device = DEVICES.find((d) => d.id === s.gpuId);
+  const weightQuant = QUANT_LEVELS.find((q) => q.id === s.weightQuantId);
+  const kvQuant = KV_CACHE_QUANT_LEVELS.find((q) => q.id === s.kvQuantId);
+  if (!model || !device || !weightQuant || !kvQuant) return null;
+  return { series: s, model, device, weightQuant, kvQuant };
 }

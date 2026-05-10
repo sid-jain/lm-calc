@@ -1,38 +1,25 @@
 import { useMemo } from 'react';
 import type { Series } from '../../lib/appState';
 import { findSamples } from '../../data/measurements';
-import { DEVICES } from '../../lib/devices';
-import { KV_CACHE_QUANT_LEVELS } from '../../lib/kvCacheQuants';
-import { models } from '../../lib/loadModels';
 import { estimateMemory } from '../../lib/memory';
-import { QUANT_LEVELS } from '../../lib/quants';
 import { Axis, DataPoint } from './chartPrimitives';
 import {
   bandPath,
   fmtCtx,
+  groupMemorySamplesByCtx,
   linearScale,
   logScale,
+  mibToGB,
   niceLinearTicks,
   pointsToPath,
   powerOfTwoTicks,
+  resolveSeries,
   seriesColor,
 } from './chartScales';
 
-// Memory in GiB, displayed; calculator works in decimal GB internally — we
-// convert once at draw time so the y-axis matches what nvidia-smi reports.
-const MIB_PER_GIB = 1024;
-const MIB_PER_GB_DECIMAL = 1000;
-
-// Resolve a Series tuple to the typed objects the math layer needs. Returns
-// null when any id doesn't resolve — caller filters those out.
-function resolveSeries(s: Series) {
-  const model = models.find((m) => m.id === s.modelId);
-  const device = DEVICES.find((d) => d.id === s.gpuId);
-  const weightQuant = QUANT_LEVELS.find((q) => q.id === s.weightQuantId);
-  const kvQuant = KV_CACHE_QUANT_LEVELS.find((q) => q.id === s.kvQuantId);
-  if (!model || !device || !weightQuant || !kvQuant) return null;
-  return { series: s, model, device, weightQuant, kvQuant };
-}
+// Y-axis is in decimal GB to match the rest of the UI (`estimateMemory().totalGB`,
+// `Device.memoryGB`). Measured peaks come from nvidia-smi as MiB (binary), so
+// they're the only values that need a unit conversion before plotting.
 
 const CURVE_SAMPLES = 30;
 const MIN_CTX = 1024;
@@ -78,23 +65,25 @@ export function MemoryVsCtxChart({
   }, [resolved, xMin]);
 
   // y-domain: comfortably above the highest measured/predicted value AND any
-  // GPU VRAM threshold so the threshold lines are inside the plot area.
+  // GPU VRAM threshold so the threshold lines are inside the plot area. All
+  // values land in decimal GB before being added — predicted curves are
+  // already GB; measured peaks come in as MiB and need conversion.
   const yMaxCandidates: number[] = [];
   for (const c of curves) {
     const last = c.points[c.points.length - 1];
     yMaxCandidates.push(last.rangeGB.high);
     if (c.resolved.device.memoryGB) yMaxCandidates.push(c.resolved.device.memoryGB);
   }
-  // Include measured points (peak VRAM is reported in MiB, convert to GiB so
-  // it lines up with the y-axis units).
   for (const r of resolved) {
     for (const s of findSamples({
       modelId: r.series.modelId,
       gpuId: r.series.gpuId,
       weightQuantId: r.series.weightQuantId,
     })) {
+      // OOM rows' peak_vram_mib reflects a partial allocation before crash
+      // — not a real measurement, exclude from the auto-fit.
       if (s.status === 'oom') continue;
-      yMaxCandidates.push(s.peak_vram_mib / MIB_PER_GIB);
+      yMaxCandidates.push(mibToGB(s.peak_vram_mib));
     }
   }
   const yMax = Math.max(...yMaxCandidates, 1) * 1.15;
@@ -104,18 +93,13 @@ export function MemoryVsCtxChart({
   const yScale = linearScale([0, yMax], [height - margin.bottom, margin.top]);
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
+  const xAxisY = height - margin.bottom;
+  const yAxisX = margin.left;
 
   const xTicks = powerOfTwoTicks(xMin, xMax);
   const yTicks = niceLinearTicks(0, yMax, 5);
 
   const showBand = curves.length === 1;
-
-  // Convert peak_vram from MiB (nvidia-smi convention) to the GB unit the
-  // calculator's predictions use, so measured points sit on the same axis as
-  // the prediction lines. The fixture's peak_vram is in MiB. Calculator
-  // returns decimal GB. We display GiB on the y-axis to match what users see
-  // in nvidia-smi / GPU specs — convert decimal GB to GiB for the curve too.
-  const decimalGBtoGiB = (gb: number) => (gb * MIB_PER_GB_DECIMAL) / MIB_PER_GIB;
 
   return (
     <svg
@@ -130,19 +114,23 @@ export function MemoryVsCtxChart({
         </clipPath>
       </defs>
 
-      {/* axes first so curves render on top */}
+      {/* Axes first so curves render on top. axisPosition is the pixel coord
+          of each spine (bottom-left of the plot), and gridSize sweeps the
+          ticks toward the plot interior. */}
       <Axis
         orientation="x"
         scale={xScale}
         ticks={xTicks}
         tickFormatter={fmtCtx}
+        axisPosition={xAxisY}
         gridSize={-plotHeight}
       />
       <Axis
         orientation="y"
         scale={yScale}
         ticks={yTicks}
-        tickFormatter={(v) => `${v.toFixed(0)} GiB`}
+        tickFormatter={(v) => `${v.toFixed(0)} GB`}
+        axisPosition={yAxisX}
         gridSize={plotWidth}
       />
 
@@ -190,11 +178,11 @@ export function MemoryVsCtxChart({
         curves.map((c, i) => {
           const upper: Array<[number, number]> = c.points.map((p) => [
             xScale(p.ctx),
-            yScale(decimalGBtoGiB(p.rangeGB.high)),
+            yScale(p.rangeGB.high),
           ]);
           const lower: Array<[number, number]> = c.points.map((p) => [
             xScale(p.ctx),
-            yScale(decimalGBtoGiB(p.rangeGB.low)),
+            yScale(p.rangeGB.low),
           ]);
           return (
             <path
@@ -211,7 +199,7 @@ export function MemoryVsCtxChart({
       {curves.map((c, i) => {
         const linePts: Array<[number, number]> = c.points.map((p) => [
           xScale(p.ctx),
-          yScale(decimalGBtoGiB(p.totalGB)),
+          yScale(p.totalGB),
         ]);
         return (
           <polyline
@@ -239,31 +227,14 @@ export function MemoryVsCtxChart({
           gpuId: c.resolved.series.gpuId,
           weightQuantId: c.resolved.series.weightQuantId,
         }).filter((s) => s.kv_quant_id === c.resolved.series.kvQuantId);
-        // Group by ctx (weight + kv already fixed by series + filter above).
-        type Group = { ctx: number; peakMib: number; hasOom: boolean; oomDepth?: number };
-        const groups = new Map<number, Group>();
-        for (const s of samples) {
-          const g = groups.get(s.ctx) ?? {
-            ctx: s.ctx,
-            peakMib: 0,
-            hasOom: false,
-          };
-          g.peakMib = Math.max(g.peakMib, s.peak_vram_mib);
-          if (s.status === 'oom') {
-            g.hasOom = true;
-            g.oomDepth = s.depth;
-          }
-          groups.set(s.ctx, g);
-        }
-        const ceilingGiB = c.resolved.device.memoryGB
-          ? (c.resolved.device.memoryGB * MIB_PER_GB_DECIMAL) / MIB_PER_GIB
-          : yMax;
-        return Array.from(groups.values()).map((g, j) => {
+        const groups = groupMemorySamplesByCtx(samples);
+        const ceilingGB = c.resolved.device.memoryGB ?? yMax;
+        return groups.map((g, j) => {
           const cx = xScale(g.ctx);
-          const cy = yScale(g.hasOom ? ceilingGiB : g.peakMib / MIB_PER_GIB);
+          const cy = yScale(g.hasOom ? ceilingGB : mibToGB(g.peakMib));
           const title = g.hasOom
             ? `OOM at ctx=${g.ctx}${g.oomDepth ? `, depth=${g.oomDepth}` : ''} (${c.resolved.kvQuant.name} KV)`
-            : `${(g.peakMib / MIB_PER_GIB).toFixed(2)} GiB measured @ ctx=${g.ctx} (${c.resolved.kvQuant.name} KV)`;
+            : `${mibToGB(g.peakMib).toFixed(2)} GB measured @ ctx=${g.ctx} (${c.resolved.kvQuant.name} KV)`;
           return (
             <DataPoint
               key={`pt-${i}-${j}`}

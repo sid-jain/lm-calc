@@ -49,14 +49,6 @@ export function findSamples(opts: {
 }
 
 /**
- * Whether ANY fixture exists for `(modelId, gpuId)` regardless of quant.
- * Used by the chart's empty-fixture footnote.
- */
-export function hasFixture(modelId: string, gpuId: string): boolean {
-  return fixtures.some((f) => f.model_id === modelId && f.gpu_id === gpuId);
-}
-
-/**
  * Number of samples for the most-specific filter the caller can supply.
  * Used by the SeriesManager popover to mark dropdown options that have
  * measured data: callers walk the (model → gpu → weight → kv) tree and ask

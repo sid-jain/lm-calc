@@ -1,11 +1,7 @@
 import { useMemo } from 'react';
 import type { Series } from '../../lib/appState';
 import { findSamples } from '../../data/measurements';
-import { DEVICES } from '../../lib/devices';
-import { KV_CACHE_QUANT_LEVELS } from '../../lib/kvCacheQuants';
-import { models } from '../../lib/loadModels';
 import { decodeTokensPerSecond } from '../../lib/memory';
-import { QUANT_LEVELS } from '../../lib/quants';
 import { Axis, DataPoint } from './chartPrimitives';
 import {
   bandPath,
@@ -15,6 +11,7 @@ import {
   niceLinearTicks,
   pointsToPath,
   powerOfTwoTicks,
+  resolveSeries,
   seriesColor,
 } from './chartScales';
 
@@ -27,15 +24,6 @@ const COMPUTE_DOMINATED_DEPTH = 16384;
 
 const CURVE_SAMPLES = 30;
 const MIN_DEPTH = 512;
-
-function resolveSeries(s: Series) {
-  const model = models.find((m) => m.id === s.modelId);
-  const device = DEVICES.find((d) => d.id === s.gpuId);
-  const weightQuant = QUANT_LEVELS.find((q) => q.id === s.weightQuantId);
-  const kvQuant = KV_CACHE_QUANT_LEVELS.find((q) => q.id === s.kvQuantId);
-  if (!model || !device || !weightQuant || !kvQuant) return null;
-  return { series: s, model, device, weightQuant, kvQuant };
-}
 
 export interface DecodeVsDepthChartProps {
   series: Series[];
@@ -102,6 +90,8 @@ export function DecodeVsDepthChart({
   const yScale = linearScale([0, yMax], [height - margin.bottom, margin.top]);
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
+  const xAxisY = height - margin.bottom;
+  const yAxisX = margin.left;
 
   const xTicks = powerOfTwoTicks(xMin, xMax);
   const yTicks = niceLinearTicks(0, yMax, 5);
@@ -153,6 +143,7 @@ export function DecodeVsDepthChart({
         scale={xScale}
         ticks={xTicks}
         tickFormatter={fmtCtx}
+        axisPosition={xAxisY}
         gridSize={-plotHeight}
       />
       <Axis
@@ -160,6 +151,7 @@ export function DecodeVsDepthChart({
         scale={yScale}
         ticks={yTicks}
         tickFormatter={(v) => `${v.toFixed(0)} tok/s`}
+        axisPosition={yAxisX}
         gridSize={plotWidth}
       />
 

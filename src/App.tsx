@@ -1,5 +1,13 @@
-import { useEffect, useReducer, useRef } from 'react';
-import { ChartsView } from './components/charts/ChartsView';
+import { Suspense, lazy, useEffect, useReducer, useRef } from 'react';
+
+// ChartsView pulls in the bundled benchmarks/measurements/*.json (~30 KB
+// gzip) plus the SVG chart components. Calculator-only users never trigger
+// it, so lazy-loading keeps the initial bundle lean. The Suspense boundary
+// shows a placeholder for the brief moment between view toggle and the
+// chunk arriving — typically imperceptible since it's a same-origin fetch.
+const ChartsView = lazy(() =>
+  import('./components/charts/ChartsView').then((m) => ({ default: m.ChartsView })),
+);
 import { Controls } from './components/Controls';
 import { Methodology } from './components/Methodology';
 import { Recommender } from './components/Recommender';
@@ -153,23 +161,29 @@ export function App(): JSX.Element {
       {showMethodology ? (
         <Methodology />
       ) : showCharts ? (
-        <ChartsView
-          series={state.series}
-          defaultSeries={{
-            modelId: models[0]?.id ?? '',
-            gpuId:
-              device.id === CUSTOM_DEVICE_ID
-                ? (DEVICES.find((d) => d.category === 'nvidia')?.id ?? DEFAULT_DEVICE_ID)
-                : device.id,
-            weightQuantId: resolvedQuant.id,
-            kvQuantId: isAutoKvQuantId(profile.kvCacheQuantId)
-              ? DEFAULT_KV_CACHE_QUANT.id
-              : profile.kvCacheQuantId,
-          }}
-          onAdd={(s) => dispatch({ type: 'ADD_SERIES', series: s })}
-          onRemove={(i) => dispatch({ type: 'REMOVE_SERIES', index: i })}
-          onClear={() => dispatch({ type: 'CLEAR_SERIES' })}
-        />
+        <Suspense
+          fallback={
+            <div className="text-sm text-slate-500 dark:text-slate-400">Loading charts…</div>
+          }
+        >
+          <ChartsView
+            series={state.series}
+            defaultSeries={{
+              modelId: models[0]?.id ?? '',
+              gpuId:
+                device.id === CUSTOM_DEVICE_ID
+                  ? (DEVICES.find((d) => d.category === 'nvidia')?.id ?? DEFAULT_DEVICE_ID)
+                  : device.id,
+              weightQuantId: resolvedQuant.id,
+              kvQuantId: isAutoKvQuantId(profile.kvCacheQuantId)
+                ? DEFAULT_KV_CACHE_QUANT.id
+                : profile.kvCacheQuantId,
+            }}
+            onAdd={(s) => dispatch({ type: 'ADD_SERIES', series: s })}
+            onRemove={(i) => dispatch({ type: 'REMOVE_SERIES', index: i })}
+            onClear={() => dispatch({ type: 'CLEAR_SERIES' })}
+          />
+        </Suspense>
       ) : (
         <>
           <p className="mb-6 text-sm text-slate-600 dark:text-slate-400">

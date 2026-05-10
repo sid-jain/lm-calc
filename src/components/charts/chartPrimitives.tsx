@@ -7,12 +7,20 @@ export interface AxisProps {
   scale: Scale;
   ticks: number[];
   tickFormatter: (v: number) => string;
-  // Axis line + label color classes — passed through so the chart can theme
-  // axes without each primitive re-deriving from theme state.
-  className?: string;
-  // Length of the perpendicular grid lines (the axis itself is at one edge,
-  // grid extends across the plot).
+  // Pixel coord of the axis line on the perpendicular axis. For an x-axis at
+  // the bottom of the plot this is `height - margin.bottom`; for a y-axis on
+  // the left it's `margin.left`. Must be supplied by the caller — the
+  // parallel-axis pixel range alone (scale.range) doesn't tell us where on
+  // the perpendicular axis to draw.
+  axisPosition: number;
+  // Pixel extent of the perpendicular grid lines, measured from
+  // `axisPosition` toward the plot interior. For an x-axis at the bottom,
+  // pass `-plotHeight` so ticks rise upward; for a y-axis on the left, pass
+  // `+plotWidth` so ticks extend rightward.
   gridSize: number;
+  // Axis line + tick label color classes — passed through so the chart can
+  // theme axes without each primitive re-deriving from theme state.
+  className?: string;
 }
 
 export function Axis({
@@ -20,8 +28,9 @@ export function Axis({
   scale,
   ticks,
   tickFormatter,
-  className,
+  axisPosition,
   gridSize,
+  className,
 }: AxisProps): JSX.Element {
   const [r0, r1] = scale.range;
   const stroke = className ?? 'stroke-slate-300 dark:stroke-slate-700';
@@ -33,14 +42,20 @@ export function Axis({
           const x = scale(t);
           return (
             <g key={t}>
-              <line x1={x} x2={x} y1={r0} y2={r0 - gridSize} className={`${stroke} opacity-30`} />
-              <text x={x} y={r0 + 14} textAnchor="middle" className={text}>
+              <line
+                x1={x}
+                x2={x}
+                y1={axisPosition}
+                y2={axisPosition + gridSize}
+                className={`${stroke} opacity-30`}
+              />
+              <text x={x} y={axisPosition + 14} textAnchor="middle" className={text}>
                 {tickFormatter(t)}
               </text>
             </g>
           );
         })}
-        <line x1={r0} x2={r1} y1={r0} y2={r0} className={stroke} />
+        <line x1={r0} x2={r1} y1={axisPosition} y2={axisPosition} className={stroke} />
       </g>
     );
   }
@@ -50,14 +65,20 @@ export function Axis({
         const y = scale(t);
         return (
           <g key={t}>
-            <line x1={r0} x2={r0 + gridSize} y1={y} y2={y} className={`${stroke} opacity-30`} />
-            <text x={r0 - 6} y={y + 3} textAnchor="end" className={text}>
+            <line
+              x1={axisPosition}
+              x2={axisPosition + gridSize}
+              y1={y}
+              y2={y}
+              className={`${stroke} opacity-30`}
+            />
+            <text x={axisPosition - 6} y={y + 3} textAnchor="end" className={text}>
               {tickFormatter(t)}
             </text>
           </g>
         );
       })}
-      <line x1={r0} x2={r0} y1={r0} y2={r1} className={stroke} />
+      <line x1={axisPosition} x2={axisPosition} y1={r0} y2={r1} className={stroke} />
     </g>
   );
 }
