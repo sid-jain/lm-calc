@@ -6,15 +6,22 @@
 # before sweeping the bench across (model × weight_quant) combos. Idempotent:
 # safe to re-run on the same box.
 #
-# Cloud images run as root, so no sudo. Touch ~/.lm-calc-bootstrapped so the
-# orchestrator can short-circuit on subsequent runs.
+# Cloud images run as root, so no sudo. The sentinel filename embeds an
+# md5sum of THIS script, so editing the bootstrap (e.g. adding a new dep)
+# auto-invalidates old sentinels and forces a re-run on existing boxes —
+# no need to ssh in and `rm ~/.lm-calc-bootstrapped` by hand.
 
 set -euo pipefail
 
-if [ -f "$HOME/.lm-calc-bootstrapped" ]; then
-  echo "already bootstrapped (delete ~/.lm-calc-bootstrapped to redo)"
+SCRIPT_HASH=$(md5sum "$0" | awk '{print $1}')
+SENTINEL="$HOME/.lm-calc-bootstrapped-${SCRIPT_HASH}"
+
+if [ -f "$SENTINEL" ]; then
+  echo "already bootstrapped at this script revision ($SCRIPT_HASH)"
   exit 0
 fi
+# Clear out sentinels from older script revisions so they don't accumulate.
+rm -f "$HOME"/.lm-calc-bootstrapped-* 2>/dev/null || true
 
 apt-get update -qq
 apt-get install -y -qq \
@@ -37,5 +44,5 @@ apt-get install -y -qq python3-venv
 python3 -m venv "$HOME/lm-calc-venv"
 "$HOME/lm-calc-venv/bin/pip" install -q -U "huggingface_hub[cli]"
 
-touch "$HOME/.lm-calc-bootstrapped"
-echo "bootstrap done"
+touch "$SENTINEL"
+echo "bootstrap done (sentinel: $SENTINEL)"

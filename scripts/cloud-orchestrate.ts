@@ -39,6 +39,13 @@ for (let i = 0; i < cliArgs.length; i++) {
 const RESULTS_DIR = join(REPO_ROOT, 'cloud-results');
 const LOGS_DIR = join(REPO_ROOT, 'cloud-logs');
 
+// Tunables — kept at the top so an operator can edit them without spelunking.
+const POLL_INTERVAL_MS = 60_000;
+const HEARTBEAT_EVERY_SEC = 300; // every 5 min during the polling loop
+const MAX_WAIT_PER_JOB_SEC = 4 * 60 * 60; // hard wall per (model, quant) bench
+const HANG_ZERO_PROC_MINUTES = 2; // procs=0 + no sentinel for N consecutive polls = dead
+const SSH_CONNECT_TIMEOUT_SEC = 15; // cap a single ssh attempt; polling re-spawns fresh
+
 interface Box {
   name: string;
   host: string;
@@ -65,7 +72,14 @@ function expand(path: string): string {
 }
 
 function scpFlags(box: Box): string[] {
-  const args = ['-o', 'ServerAliveInterval=60', '-o', 'StrictHostKeyChecking=accept-new'];
+  const args = [
+    '-o',
+    'ServerAliveInterval=60',
+    '-o',
+    'StrictHostKeyChecking=accept-new',
+    '-o',
+    `ConnectTimeout=${SSH_CONNECT_TIMEOUT_SEC}`,
+  ];
   if (box.port) args.push('-P', String(box.port));
   if (box.ssh_key) args.push('-i', expand(box.ssh_key));
   return args;
@@ -75,6 +89,8 @@ function sshArgs(box: Box): string[] {
   // accept-new auto-trusts first-time host keys (so orchestrator doesn't hang
   // on the prompt for fresh cloud boxes) but still errors if a key changes —
   // safer than =no, and aligned with a "rented box, short-lived" threat model.
+  // ConnectTimeout caps how long a single ssh attempt can hang on a wedged box
+  // so that polling doesn't stall the whole runBox loop.
   const args = [
     '-o',
     'ServerAliveInterval=60',
@@ -82,6 +98,8 @@ function sshArgs(box: Box): string[] {
     'ServerAliveCountMax=10',
     '-o',
     'StrictHostKeyChecking=accept-new',
+    '-o',
+    `ConnectTimeout=${SSH_CONNECT_TIMEOUT_SEC}`,
   ];
   if (box.port) args.push('-p', String(box.port));
   if (box.ssh_key) args.push('-i', expand(box.ssh_key));
@@ -131,6 +149,20 @@ async function runBox(box: Box, jobs: Job[]): Promise<BoxOutcome> {
     console.log(line);
     log.write(line + '\n');
   };
+  const totalJobs = jobs.reduce((n, j) => n + j.weight_quants.length, 0);
+  const abortBox = (stage: string): BoxOutcome => {
+    heartbeat(`${stage} FAILED — abort box`);
+    log.end();
+    return {
+      box: box.name,
+      ok: false,
+      jobs_ok: 0,
+      jobs_failed: totalJobs,
+      csv_pulled: false,
+      log_path: logPath,
+      csv_path: csvPath,
+    };
+  };
 
   const target = `${box.user}@${box.host}`;
   const ssh = sshArgs(box);
@@ -157,19 +189,7 @@ async function runBox(box: Box, jobs: Job[]): Promise<BoxOutcome> {
     log,
     'rsync',
   );
-  if (rsyncCode !== 0) {
-    heartbeat('rsync FAILED — abort box');
-    log.end();
-    return {
-      box: box.name,
-      ok: false,
-      jobs_ok: 0,
-      jobs_failed: jobs.reduce((n, j) => n + j.weight_quants.length, 0),
-      csv_pulled: false,
-      log_path: logPath,
-      csv_path: csvPath,
-    };
-  }
+  if (rsyncCode !== 0) return abortBox('rsync');
 
   heartbeat('bootstrap');
   const bootCode = await run(
@@ -178,19 +198,7 @@ async function runBox(box: Box, jobs: Job[]): Promise<BoxOutcome> {
     log,
     'bootstrap',
   );
-  if (bootCode !== 0) {
-    heartbeat('bootstrap FAILED — abort box');
-    log.end();
-    return {
-      box: box.name,
-      ok: false,
-      jobs_ok: 0,
-      jobs_failed: jobs.reduce((n, j) => n + j.weight_quants.length, 0),
-      csv_pulled: false,
-      log_path: logPath,
-      csv_path: csvPath,
-    };
-  }
+  if (bootCode !== 0) return abortBox('bootstrap');
 
   // Clear any stale results.csv on the box so this orchestration's bench runs
   // produce a clean CSV (bench.sh appends; we don't want rows from a previous
@@ -207,19 +215,7 @@ async function runBox(box: Box, jobs: Job[]): Promise<BoxOutcome> {
     log,
     'npm-ci',
   );
-  if (npmCode !== 0) {
-    heartbeat('npm ci FAILED — abort box');
-    log.end();
-    return {
-      box: box.name,
-      ok: false,
-      jobs_ok: 0,
-      jobs_failed: jobs.reduce((n, j) => n + j.weight_quants.length, 0),
-      csv_pulled: false,
-      log_path: logPath,
-      csv_path: csvPath,
-    };
-  }
+  if (npmCode !== 0) return abortBox('npm ci');
 
   let jobsOk = 0;
   let jobsFailed = 0;
@@ -278,15 +274,12 @@ async function runBox(box: Box, jobs: Job[]): Promise<BoxOutcome> {
       // Poll for sentinel. Each poll is a fresh ssh, so a network blip just
       // delays the next poll — it doesn't kill the bench.
       let waitedSec = 0;
-      // Hard wall to catch a truly stuck bench: PER_TEST_TIMEOUT * configs(=12)
-      // * a fudge for download is ~6h. Use 4h to bound a single (model, quant).
-      const maxWaitSec = 4 * 60 * 60;
       let done = false;
       let exitCode = -1;
       let consecutiveZeroProc = 0;
-      while (waitedSec < maxWaitSec) {
-        await new Promise((r) => setTimeout(r, 60_000));
-        waitedSec += 60;
+      while (waitedSec < MAX_WAIT_PER_JOB_SEC) {
+        await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+        waitedSec += POLL_INTERVAL_MS / 1000;
 
         // Single ssh that does everything we need this cycle: read sentinel,
         // count bench-related procs, read GPU state, and read remote log
@@ -356,20 +349,20 @@ async function runBox(box: Box, jobs: Job[]): Promise<BoxOutcome> {
           done = true;
           break;
         }
-        // Hang detection: 2 consecutive minutes with zero bench-related procs
+        // Hang detection: N consecutive minutes with zero bench-related procs
         // AND no sentinel = the bench died without writing the sentinel (a
         // SIGKILL, OOM-kill, or crash before the trap). Surface immediately.
         if (procs === 0) consecutiveZeroProc++;
         else consecutiveZeroProc = 0;
-        if (consecutiveZeroProc >= 2) {
+        if (consecutiveZeroProc >= HANG_ZERO_PROC_MINUTES) {
           heartbeat(
             `bench ${jobTag} appears DEAD: 0 procs, no sentinel, ${waitedSec}s in — abandoning`,
           );
           healthStream.write(`${ts} HANG_DETECTED zero_proc_minutes=${consecutiveZeroProc}\n`);
           break;
         }
-        // Heartbeat every 5 min so the operator sees forward progress.
-        if (waitedSec % 300 === 0) {
+        // Heartbeat so the operator sees forward progress.
+        if (waitedSec % HEARTBEAT_EVERY_SEC === 0) {
           heartbeat(
             `...still running ${jobTag} (${waitedSec / 60}m, procs=${procs}, build=${buildSize}b, bench=${benchSize}b)`,
           );
@@ -378,7 +371,7 @@ async function runBox(box: Box, jobs: Job[]): Promise<BoxOutcome> {
       healthStream.end();
       if (!done) {
         jobsFailed++;
-        heartbeat(`bench ${jobTag} TIMEOUT after ${maxWaitSec / 3600}h — continuing`);
+        heartbeat(`bench ${jobTag} TIMEOUT after ${MAX_WAIT_PER_JOB_SEC / 3600}h — continuing`);
         continue;
       }
       if (exitCode === 0) {

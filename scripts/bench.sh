@@ -128,23 +128,12 @@ fi
 
 banner "Validating IDs against calculator data"
 
-VALIDATION="$(
-  cd "$REPO_ROOT" && npx --no-install tsx -e "
-    import models from './src/data/models.json' with { type: 'json' };
-    import { QUANT_LEVELS } from './src/lib/quants';
-    import { KV_CACHE_QUANT_LEVELS } from './src/lib/kvCacheQuants';
-    import { DEVICES } from './src/lib/devices';
-    const m = models.find(x => x.id === '$MODEL_ID');
-    const q = QUANT_LEVELS.find(x => x.id === '$WEIGHT_QUANT');
-    const d = DEVICES.find(x => x.id === '$GPU_ID');
-    if (!m) { console.error('Unknown model-id: $MODEL_ID'); process.exit(2); }
-    if (!q) { console.error('Unknown weight-quant: $WEIGHT_QUANT (valid: ' + QUANT_LEVELS.map(x=>x.id).join(',') + ')'); process.exit(2); }
-    if (!d) { console.error('Unknown gpu-id: $GPU_ID'); process.exit(2); }
-    console.log(JSON.stringify({ maxContext: m.arch.maxContext, gpuName: d.name, kvIds: KV_CACHE_QUANT_LEVELS.map(x=>x.id) }));
-  " 2>&1
-)" || { echo "$VALIDATION"; exit 2; }
+# IDs go in as positional args (not interpolated into a JS string), so a typo
+# surfaces as a clear "Unknown X" message instead of a TS parse error.
+VALIDATION="$(cd "$REPO_ROOT" && npx --no-install tsx scripts/validate-ids.ts \
+  "$MODEL_ID" "$WEIGHT_QUANT" "$GPU_ID" 2>&1)" || { echo "$VALIDATION"; exit 2; }
 
-MAX_CONTEXT=$(echo "$VALIDATION" | tail -1 | "$PYTHON" -c 'import sys,json; print(json.load(sys.stdin)["maxContext"])')
+MAX_CONTEXT="${VALIDATION#maxContext=}"
 echo "  model-id:     $MODEL_ID (maxContext=$MAX_CONTEXT)"
 echo "  weight-quant: $WEIGHT_QUANT"
 echo "  gpu-id:       $GPU_ID"
@@ -393,41 +382,38 @@ run_one() {
   # Parse one row per depth from llama-bench CSV. Stderr (CUDA init, progress)
   # and stdout (CSV) are mixed in the log file, so we identify the header by
   # content match (`^build_commit,`), not by NR==1.
+  #
+  # llama-bench emits two rows per depth:
+  #   pp row: n_prompt>0, n_gen=0  → prefill speed
+  #   tg row: n_prompt=0, n_gen>0  → decode speed
+  # extract_metric picks one of the two based on `kind` (pp|tg).
+  extract_metric() {
+    local kind=$1 depth=$2 file=$3
+    awk -F, -v depth="$depth" -v kind="$kind" '
+      /^build_commit,/ {
+        for (i=1;i<=NF;i++) { h=$i; gsub(/"/,"",h)
+          if (h=="n_prompt") np=i
+          if (h=="n_gen")    ng=i
+          if (h=="n_depth")  nd=i
+          if (h=="avg_ts")   ts=i
+        }
+        next
+      }
+      np && /^"/ {
+        p=$np; g=$ng; dd=$nd; v=$ts
+        gsub(/"/,"",p); gsub(/"/,"",g); gsub(/"/,"",dd); gsub(/"/,"",v)
+        if (dd+0!=depth) next
+        if (kind=="pp" && p+0>0 && g+0==0) { print v; exit }
+        if (kind=="tg" && p+0==0 && g+0>0) { print v; exit }
+      }
+    ' "$file"
+  }
+
   local any_ok=0 any_failed=0
   for d in "${DEPTHS_ARR[@]}"; do
     local pp tg
-    pp=$(awk -F, -v depth="$d" '
-      /^build_commit,/ {
-        for (i=1;i<=NF;i++) { h=$i; gsub(/"/,"",h)
-          if (h=="n_prompt") np=i
-          if (h=="n_gen")    ng=i
-          if (h=="n_depth")  nd=i
-          if (h=="avg_ts")   ts=i
-        }
-        next
-      }
-      np && /^"/ {
-        p=$np; g=$ng; dd=$nd; v=$ts
-        gsub(/"/,"",p); gsub(/"/,"",g); gsub(/"/,"",dd); gsub(/"/,"",v)
-        if (dd+0==depth && p+0>0 && g+0==0) { print v; exit }
-      }
-    ' "$logfile")
-    tg=$(awk -F, -v depth="$d" '
-      /^build_commit,/ {
-        for (i=1;i<=NF;i++) { h=$i; gsub(/"/,"",h)
-          if (h=="n_prompt") np=i
-          if (h=="n_gen")    ng=i
-          if (h=="n_depth")  nd=i
-          if (h=="avg_ts")   ts=i
-        }
-        next
-      }
-      np && /^"/ {
-        p=$np; g=$ng; dd=$nd; v=$ts
-        gsub(/"/,"",p); gsub(/"/,"",g); gsub(/"/,"",dd); gsub(/"/,"",v)
-        if (dd+0==depth && p+0==0 && g+0>0) { print v; exit }
-      }
-    ' "$logfile")
+    pp=$(extract_metric pp "$d" "$logfile")
+    tg=$(extract_metric tg "$d" "$logfile")
 
     local prefix="$TIMESTAMP,$LLAMA_COMMIT,$GPU_ID,\"$GPU_NAME\",$GPU_VRAM,$MODEL_ID,$WEIGHT_QUANT,$ctx,$ctk,$ctv,$d"
 

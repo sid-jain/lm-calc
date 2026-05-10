@@ -28,8 +28,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..');
 
 interface Sample {
+  // The matrix only emits symmetric KV (ctk == ctv), so a single id captures
+  // both. validateRow() rejects asymmetric rows up front so they never reach
+  // a fixture.
   weight_quant_id: string;
-  kv_quant_id: string; // when ctk == ctv (the matrix only emits symmetric); see comment in addOrReplace
+  kv_quant_id: string;
   ctx: number;
   depth: number;
   peak_vram_mib: number;
