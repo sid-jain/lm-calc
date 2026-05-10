@@ -10,9 +10,11 @@ import { estimateMemory, decodeTokensPerSecond } from './memory';
 
 // Regression gate: for every measured sample under benchmarks/measurements/,
 // assert that the calculator's UI bands still bracket reality. The bands are
-// memory ×0.95–1.20 (set in memory.ts) and decode ×0.50–0.85. If a methodology
-// change makes the bands miss measured truth, this test fails — exactly the
-// signal we want before such a change ships.
+// memory ×0.90–1.30 and decode ×0.50–0.92 (see ESTIMATE_*_FACTOR and
+// DECODE_EFFICIENCY_* in memory.ts — kept as the source of truth, this comment
+// just tells the reader what to expect). If a methodology change makes the
+// bands miss measured truth, this test fails — exactly the signal we want
+// before such a change ships.
 //
 // Fixtures are produced by scripts/bench.sh (raw measurements) → scripts/bench-import.ts
 // (normalized JSON). The matrix that drives the bench is generated from raw

@@ -50,5 +50,5 @@ All values (`hidden_size`, `num_hidden_layers`, `num_attention_heads`, `num_key_
 - **Quant byte averages** are llama.cpp BPW values. Real GGUF sizes vary slightly because K-quants apply different bit widths to different tensors.
 - **Prefill speed** (compute-bound, depends on FLOPS) isn't modeled. The displayed tok/s is decode-only.
 - **MoE routing overhead** in real systems often re-reads experts due to routing variance. The 0.50× low end of the speed range accounts for this.
-- **Per-engine differences** (llama.cpp vs vLLM vs MLX vs Transformers) are folded into the 0.50–0.85× efficiency band.
+- **Per-engine differences** (llama.cpp vs vLLM vs MLX vs Transformers) are folded into the 0.50–0.92× efficiency band.
 - **No activation memory** — negligible at batch size 1, but significant for larger batches or training.

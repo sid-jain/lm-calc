@@ -33,6 +33,7 @@
 #   --reps <n>             default 2
 #   --timeout <s>          per-config safety net (default 1800)
 #   --matrix <auto|path>   default auto (calls scripts/bench-matrix.ts)
+#   --depths <csv>         decode-depth ladder (default 512,4096,16384,32768)
 #   --python <path>        python interpreter with huggingface_hub installed
 #                          (default: python3 from PATH). Use this to point at a
 #                          conda/venv interpreter without shadowing the system
@@ -67,7 +68,9 @@ PYTHON="python3"
 DEPTHS="512,4096,16384,32768"
 
 usage() {
-  sed -n '2,40p' "$0" | sed 's/^# //;s/^#//'
+  # Print everything between the second `#` line and the first non-comment line.
+  # Avoids a fixed line range that drifts when the docs grow.
+  awk '/^#!/ {next} /^#/ {sub(/^# ?/,""); print; next} {exit}' "$0"
   exit "${1:-1}"
 }
 
