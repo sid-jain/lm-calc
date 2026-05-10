@@ -16,9 +16,23 @@ export interface RecommendState {
   excludedDevs: string[];
 }
 
+// One line on the Charts view. Color is index-derived (not stored), so the
+// tuple `(modelId, gpuId, weightQuantId, kvQuantId)` is the entire identity
+// — also serves as the dedup key in ADD_SERIES.
+export interface Series {
+  modelId: string;
+  gpuId: string;
+  weightQuantId: string;
+  kvQuantId: string;
+}
+
+export type View = 'calculator' | 'methodology' | 'charts';
+
 export interface AppState {
   profile: Profile;
   recommend: RecommendState;
+  series: Series[];
+  view: View;
 }
 
 export type Action =
@@ -29,7 +43,19 @@ export type Action =
   | { type: 'SET_DEVICE'; deviceId: string }
   | { type: 'SET_CUSTOM_BANDWIDTH'; bw: number }
   | { type: 'SET_MIN_TPS'; minTps: number }
-  | { type: 'SET_EXCLUDED_DEVS'; devs: string[] };
+  | { type: 'SET_EXCLUDED_DEVS'; devs: string[] }
+  | { type: 'ADD_SERIES'; series: Series }
+  | { type: 'REMOVE_SERIES'; index: number }
+  | { type: 'CLEAR_SERIES' }
+  | { type: 'SET_VIEW'; view: View }
+  // Used by the popstate handler to re-hydrate after the user hits browser
+  // back/forward. Performs a deep merge on top of INITIAL_STATE so the state
+  // ends up exactly mirroring whatever's in the URL right now.
+  | { type: 'HYDRATE'; partial: Partial<AppState> };
+
+export function seriesKey(s: Series): string {
+  return `${s.modelId}|${s.gpuId}|${s.weightQuantId}|${s.kvQuantId}`;
+}
 
 export const INITIAL_STATE: AppState = {
   profile: {
@@ -44,6 +70,8 @@ export const INITIAL_STATE: AppState = {
     minTps: DEFAULT_MIN_TPS,
     excludedDevs: [],
   },
+  series: [],
+  view: 'calculator',
 };
 
 export function reducer(state: AppState, action: Action): AppState {
@@ -67,5 +95,27 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, recommend: { ...state.recommend, minTps: action.minTps } };
     case 'SET_EXCLUDED_DEVS':
       return { ...state, recommend: { ...state.recommend, excludedDevs: action.devs } };
+    case 'ADD_SERIES': {
+      const key = seriesKey(action.series);
+      // Dedup by tuple — adding the same combo twice is a no-op (and would
+      // render two identical lines on top of each other anyway).
+      if (state.series.some((s) => seriesKey(s) === key)) return state;
+      return { ...state, series: [...state.series, action.series] };
+    }
+    case 'REMOVE_SERIES':
+      return { ...state, series: state.series.filter((_, i) => i !== action.index) };
+    case 'CLEAR_SERIES':
+      return { ...state, series: [] };
+    case 'SET_VIEW':
+      return { ...state, view: action.view };
+    case 'HYDRATE':
+      return {
+        ...INITIAL_STATE,
+        ...action.partial,
+        profile: { ...INITIAL_STATE.profile, ...action.partial.profile },
+        recommend: { ...INITIAL_STATE.recommend, ...action.partial.recommend },
+        series: action.partial.series ?? INITIAL_STATE.series,
+        view: action.partial.view ?? INITIAL_STATE.view,
+      };
   }
 }

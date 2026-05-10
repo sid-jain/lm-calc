@@ -23,6 +23,7 @@ import { models } from '../src/lib/loadModels';
 import { QUANT_LEVELS } from '../src/lib/quants';
 import { KV_CACHE_QUANT_LEVELS } from '../src/lib/kvCacheQuants';
 import { DEVICES } from '../src/lib/devices';
+import { bundleMeasurements } from './bundle-measurements';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..');
@@ -276,6 +277,12 @@ function main() {
         .join(', ')}`,
     );
   }
+
+  // Refresh the bundled JSON the SPA imports (src/data/measurements.json) so
+  // the Charts view picks up the new fixtures on the next dev/build without
+  // a separate command.
+  const bundle = bundleMeasurements();
+  console.log(`Bundled ${bundle.count} fixtures into src/data/measurements.json`);
 }
 
 main();

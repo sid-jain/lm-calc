@@ -1,11 +1,17 @@
-import { useEffect, useReducer, useState } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
+import { ChartsView } from './components/charts/ChartsView';
 import { Controls } from './components/Controls';
 import { Methodology } from './components/Methodology';
 import { Recommender } from './components/Recommender';
 import { INITIAL_STATE, reducer } from './lib/appState';
 import { DEFAULT_DEVICE_ID, DEFAULT_QUANT_ID } from './lib/config';
 import { DEVICES, CUSTOM_DEVICE_ID } from './lib/devices';
-import { AUTO_KV_QUANT, isAutoKvQuantId, resolveKvCacheQuant } from './lib/kvCacheQuants';
+import {
+  AUTO_KV_QUANT,
+  DEFAULT_KV_CACHE_QUANT,
+  isAutoKvQuantId,
+  resolveKvCacheQuant,
+} from './lib/kvCacheQuants';
 import { models } from './lib/loadModels';
 import { AUTO_QUANT, QUANT_LEVELS, isAutoQuantId } from './lib/quants';
 import { deserialize, readUrlParams, writeUrlParams } from './lib/urlSync';
@@ -14,6 +20,13 @@ import { useTheme } from './lib/useTheme';
 function init(state: typeof INITIAL_STATE) {
   const params = readUrlParams();
   const partial = deserialize(params);
+  // One-time migration: a pre-#view bookmark with #methodology or #charts in
+  // the URL hash still lands on the right view. Once the user navigates,
+  // urlSync writes ?view=… and the hash drops off naturally.
+  if (!partial.view && typeof window !== 'undefined') {
+    if (window.location.hash === '#methodology') partial.view = 'methodology';
+    else if (window.location.hash === '#charts') partial.view = 'charts';
+  }
   return {
     ...state,
     ...partial,
@@ -24,16 +37,9 @@ function init(state: typeof INITIAL_STATE) {
 
 export function App(): JSX.Element {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE, init);
-  const [showMethodology, setShowMethodology] = useState(
-    () => typeof window !== 'undefined' && window.location.hash === '#methodology',
-  );
+  const showMethodology = state.view === 'methodology';
+  const showCharts = state.view === 'charts';
   const { theme, toggle } = useTheme();
-
-  useEffect(() => {
-    const onPop = () => setShowMethodology(window.location.hash === '#methodology');
-    window.addEventListener('popstate', onPop);
-    return () => window.removeEventListener('popstate', onPop);
-  }, []);
 
   const { profile, recommend } = state;
 
@@ -57,10 +63,33 @@ export function App(): JSX.Element {
   const bandwidthGBps = device.bandwidthGBps;
   const effectiveRamGB = device.memoryGB ?? profile.ramGB;
 
+  // Track the last-written view so the URL writer can choose pushState (when
+  // the view changes — adds a history entry, browser back works) vs.
+  // replaceState (continuous edits like slider drags, which would otherwise
+  // pollute history with thousands of entries).
+  const lastViewRef = useRef(state.view);
   useEffect(() => {
-    const id = requestAnimationFrame(() => writeUrlParams(state));
+    const id = requestAnimationFrame(() => {
+      const viewChanged = lastViewRef.current !== state.view;
+      writeUrlParams(state, { historyMethod: viewChanged ? 'push' : 'replace' });
+      lastViewRef.current = state.view;
+    });
     return () => cancelAnimationFrame(id);
   }, [state]);
+
+  // Browser back/forward: re-hydrate state from the URL whenever the user
+  // navigates through the history stack. The HYDRATE action does a deep
+  // merge against INITIAL_STATE, so anything not in the URL falls back to
+  // defaults — matches first-load behavior.
+  useEffect(() => {
+    const onPop = () => {
+      const partial = deserialize(readUrlParams());
+      dispatch({ type: 'HYDRATE', partial });
+      lastViewRef.current = partial.view ?? 'calculator';
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">
@@ -77,14 +106,22 @@ export function App(): JSX.Element {
         <nav className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
           <button
             type="button"
-            onClick={() => {
-              if (showMethodology) {
-                history.back();
-              } else {
-                history.pushState(null, '', '#methodology');
-                setShowMethodology(true);
-              }
-            }}
+            onClick={() =>
+              dispatch({ type: 'SET_VIEW', view: showCharts ? 'calculator' : 'charts' })
+            }
+            className={
+              showCharts
+                ? 'font-medium text-slate-900 dark:text-slate-100'
+                : 'hover:text-slate-900 dark:hover:text-slate-100'
+            }
+          >
+            Charts
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              dispatch({ type: 'SET_VIEW', view: showMethodology ? 'calculator' : 'methodology' })
+            }
             className={
               showMethodology
                 ? 'font-medium text-slate-900 dark:text-slate-100'
@@ -115,6 +152,24 @@ export function App(): JSX.Element {
 
       {showMethodology ? (
         <Methodology />
+      ) : showCharts ? (
+        <ChartsView
+          series={state.series}
+          defaultSeries={{
+            modelId: models[0]?.id ?? '',
+            gpuId:
+              device.id === CUSTOM_DEVICE_ID
+                ? (DEVICES.find((d) => d.category === 'nvidia')?.id ?? DEFAULT_DEVICE_ID)
+                : device.id,
+            weightQuantId: resolvedQuant.id,
+            kvQuantId: isAutoKvQuantId(profile.kvCacheQuantId)
+              ? DEFAULT_KV_CACHE_QUANT.id
+              : profile.kvCacheQuantId,
+          }}
+          onAdd={(s) => dispatch({ type: 'ADD_SERIES', series: s })}
+          onRemove={(i) => dispatch({ type: 'REMOVE_SERIES', index: i })}
+          onClear={() => dispatch({ type: 'CLEAR_SERIES' })}
+        />
       ) : (
         <>
           <p className="mb-6 text-sm text-slate-600 dark:text-slate-400">

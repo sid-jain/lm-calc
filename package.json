@@ -4,9 +4,12 @@
   "version": "0.8.0-alpha",
   "type": "module",
   "scripts": {
+    "predev": "tsx scripts/bundle-measurements.ts",
     "dev": "vite",
+    "prebuild": "tsx scripts/bundle-measurements.ts",
     "build": "tsc -b && vite build && tsx --tsconfig tsconfig.app.json scripts/prerender.tsx && tsx scripts/generate-og.tsx",
     "preview": "vite preview",
+    "pretest": "tsx scripts/bundle-measurements.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
